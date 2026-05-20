@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2026-05-20T12:20:42Z",
+  "bucket": "cc-berserk",
+  "items": [
+    {
+      "name": "Shami",
+      "objectKey": "berserk/generated/seed-avatars/avatar-01.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-01.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Ciri",
+      "objectKey": "berserk/generated/seed-avatars/avatar-02.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-02.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Ozair AI",
+      "objectKey": "berserk/generated/seed-avatars/avatar-03.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-03.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Aaliya",
+      "objectKey": "berserk/generated/seed-avatars/avatar-04.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-04.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Sarah",
+      "objectKey": "berserk/generated/seed-avatars/avatar-05.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-05.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Soulful Ai",
+      "objectKey": "berserk/generated/seed-avatars/avatar-06.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-06.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Zara",
+      "objectKey": "berserk/generated/seed-avatars/avatar-07.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-07.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "auqib",
+      "objectKey": "berserk/generated/seed-avatars/avatar-08.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-08.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Kuro",
+      "objectKey": "berserk/generated/seed-avatars/avatar-09.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-09.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Mika",
+      "objectKey": "berserk/generated/seed-avatars/avatar-10.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-10.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Nana",
+      "objectKey": "berserk/generated/seed-avatars/avatar-11.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-11.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Rin",
+      "objectKey": "berserk/generated/seed-avatars/avatar-12.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-12.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Sora",
+      "objectKey": "berserk/generated/seed-avatars/avatar-13.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-13.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Yuki",
+      "objectKey": "berserk/generated/seed-avatars/avatar-14.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-14.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Haruka",
+      "objectKey": "berserk/generated/seed-avatars/avatar-15.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-15.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Noa",
+      "objectKey": "berserk/generated/seed-avatars/avatar-16.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-16.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Eden",
+      "objectKey": "berserk/generated/seed-avatars/avatar-17.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-17.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Lumi",
+      "objectKey": "berserk/generated/seed-avatars/avatar-18.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-18.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "Jack",
+      "objectKey": "berserk/generated/seed-avatars/avatar-19.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-19.svg",
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "name": "MURPHY",
+      "objectKey": "berserk/generated/seed-avatars/avatar-20.svg",
+      "ossURI": "oss://cc-berserk/berserk/generated/seed-avatars/avatar-20.svg",
+      "mimeType": "image/svg+xml"
+    }
+  ]
+}

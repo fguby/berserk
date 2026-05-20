@@ -1,0 +1,507 @@
+{
+  "generatedAt": "2026-05-20T10:32:25Z",
+  "bucket": "cc-berserk",
+  "prefix": "berserk/generated/meigen-feed",
+  "items": [
+    {
+      "id": "feed-01",
+      "filename": "feed-01.jpg",
+      "localPath": "/assets/meigen-feed/feed-01.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-01.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-01.jpg",
+      "mimeType": "image/jpeg",
+      "size": 161585
+    },
+    {
+      "id": "feed-02",
+      "filename": "feed-02.jpg",
+      "localPath": "/assets/meigen-feed/feed-02.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-02.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-02.jpg",
+      "mimeType": "image/jpeg",
+      "size": 179324
+    },
+    {
+      "id": "feed-03",
+      "filename": "feed-03.jpg",
+      "localPath": "/assets/meigen-feed/feed-03.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-03.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-03.jpg",
+      "mimeType": "image/jpeg",
+      "size": 97193
+    },
+    {
+      "id": "feed-04",
+      "filename": "feed-04.jpg",
+      "localPath": "/assets/meigen-feed/feed-04.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-04.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-04.jpg",
+      "mimeType": "image/jpeg",
+      "size": 377717
+    },
+    {
+      "id": "feed-05",
+      "filename": "feed-05.jpg",
+      "localPath": "/assets/meigen-feed/feed-05.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-05.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-05.jpg",
+      "mimeType": "image/jpeg",
+      "size": 248657
+    },
+    {
+      "id": "feed-06",
+      "filename": "feed-06.jpg",
+      "localPath": "/assets/meigen-feed/feed-06.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-06.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-06.jpg",
+      "mimeType": "image/jpeg",
+      "size": 138980
+    },
+    {
+      "id": "feed-07",
+      "filename": "feed-07.jpg",
+      "localPath": "/assets/meigen-feed/feed-07.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-07.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-07.jpg",
+      "mimeType": "image/jpeg",
+      "size": 114518
+    },
+    {
+      "id": "feed-08",
+      "filename": "feed-08.jpg",
+      "localPath": "/assets/meigen-feed/feed-08.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-08.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-08.jpg",
+      "mimeType": "image/jpeg",
+      "size": 207591
+    },
+    {
+      "id": "feed-09",
+      "filename": "feed-09.jpg",
+      "localPath": "/assets/meigen-feed/feed-09.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-09.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-09.jpg",
+      "mimeType": "image/jpeg",
+      "size": 231218
+    },
+    {
+      "id": "feed-10",
+      "filename": "feed-10.jpg",
+      "localPath": "/assets/meigen-feed/feed-10.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-10.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-10.jpg",
+      "mimeType": "image/jpeg",
+      "size": 249380
+    },
+    {
+      "id": "feed-11",
+      "filename": "feed-11.jpg",
+      "localPath": "/assets/meigen-feed/feed-11.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-11.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-11.jpg",
+      "mimeType": "image/jpeg",
+      "size": 271404
+    },
+    {
+      "id": "feed-12",
+      "filename": "feed-12.jpg",
+      "localPath": "/assets/meigen-feed/feed-12.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-12.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-12.jpg",
+      "mimeType": "image/jpeg",
+      "size": 166572
+    },
+    {
+      "id": "feed-13",
+      "filename": "feed-13.jpg",
+      "localPath": "/assets/meigen-feed/feed-13.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-13.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-13.jpg",
+      "mimeType": "image/jpeg",
+      "size": 168842
+    },
+    {
+      "id": "feed-14",
+      "filename": "feed-14.jpg",
+      "localPath": "/assets/meigen-feed/feed-14.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-14.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-14.jpg",
+      "mimeType": "image/jpeg",
+      "size": 297820
+    },
+    {
+      "id": "feed-15",
+      "filename": "feed-15.jpg",
+      "localPath": "/assets/meigen-feed/feed-15.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-15.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-15.jpg",
+      "mimeType": "image/jpeg",
+      "size": 173797
+    },
+    {
+      "id": "feed-16",
+      "filename": "feed-16.jpg",
+      "localPath": "/assets/meigen-feed/feed-16.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-16.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-16.jpg",
+      "mimeType": "image/jpeg",
+      "size": 357088
+    },
+    {
+      "id": "feed-17",
+      "filename": "feed-17.jpg",
+      "localPath": "/assets/meigen-feed/feed-17.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-17.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-17.jpg",
+      "mimeType": "image/jpeg",
+      "size": 206413
+    },
+    {
+      "id": "feed-18",
+      "filename": "feed-18.jpg",
+      "localPath": "/assets/meigen-feed/feed-18.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-18.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-18.jpg",
+      "mimeType": "image/jpeg",
+      "size": 73127
+    },
+    {
+      "id": "feed-19",
+      "filename": "feed-19.jpg",
+      "localPath": "/assets/meigen-feed/feed-19.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-19.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-19.jpg",
+      "mimeType": "image/jpeg",
+      "size": 235843
+    },
+    {
+      "id": "feed-20",
+      "filename": "feed-20.jpg",
+      "localPath": "/assets/meigen-feed/feed-20.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-20.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-20.jpg",
+      "mimeType": "image/jpeg",
+      "size": 282291
+    },
+    {
+      "id": "feed-21",
+      "filename": "feed-21.jpg",
+      "localPath": "/assets/meigen-feed/feed-21.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-21.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-21.jpg",
+      "mimeType": "image/jpeg",
+      "size": 306560
+    },
+    {
+      "id": "feed-22",
+      "filename": "feed-22.jpg",
+      "localPath": "/assets/meigen-feed/feed-22.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-22.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-22.jpg",
+      "mimeType": "image/jpeg",
+      "size": 156045
+    },
+    {
+      "id": "feed-23",
+      "filename": "feed-23.jpg",
+      "localPath": "/assets/meigen-feed/feed-23.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-23.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-23.jpg",
+      "mimeType": "image/jpeg",
+      "size": 199750
+    },
+    {
+      "id": "feed-24",
+      "filename": "feed-24.jpg",
+      "localPath": "/assets/meigen-feed/feed-24.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-24.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-24.jpg",
+      "mimeType": "image/jpeg",
+      "size": 273272
+    },
+    {
+      "id": "feed-25",
+      "filename": "feed-25.jpg",
+      "localPath": "/assets/meigen-feed/feed-25.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-25.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-25.jpg",
+      "mimeType": "image/jpeg",
+      "size": 240428
+    },
+    {
+      "id": "feed-26",
+      "filename": "feed-26.jpg",
+      "localPath": "/assets/meigen-feed/feed-26.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-26.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-26.jpg",
+      "mimeType": "image/jpeg",
+      "size": 161865
+    },
+    {
+      "id": "feed-27",
+      "filename": "feed-27.jpg",
+      "localPath": "/assets/meigen-feed/feed-27.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-27.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-27.jpg",
+      "mimeType": "image/jpeg",
+      "size": 404035
+    },
+    {
+      "id": "feed-28",
+      "filename": "feed-28.jpg",
+      "localPath": "/assets/meigen-feed/feed-28.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-28.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-28.jpg",
+      "mimeType": "image/jpeg",
+      "size": 79231
+    },
+    {
+      "id": "feed-29",
+      "filename": "feed-29.jpg",
+      "localPath": "/assets/meigen-feed/feed-29.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-29.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-29.jpg",
+      "mimeType": "image/jpeg",
+      "size": 214288
+    },
+    {
+      "id": "feed-30",
+      "filename": "feed-30.jpg",
+      "localPath": "/assets/meigen-feed/feed-30.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-30.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-30.jpg",
+      "mimeType": "image/jpeg",
+      "size": 223110
+    },
+    {
+      "id": "feed-31",
+      "filename": "feed-31.jpg",
+      "localPath": "/assets/meigen-feed/feed-31.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-31.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-31.jpg",
+      "mimeType": "image/jpeg",
+      "size": 166914
+    },
+    {
+      "id": "feed-32",
+      "filename": "feed-32.jpg",
+      "localPath": "/assets/meigen-feed/feed-32.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-32.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-32.jpg",
+      "mimeType": "image/jpeg",
+      "size": 365723
+    },
+    {
+      "id": "feed-33",
+      "filename": "feed-33.jpg",
+      "localPath": "/assets/meigen-feed/feed-33.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-33.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-33.jpg",
+      "mimeType": "image/jpeg",
+      "size": 235689
+    },
+    {
+      "id": "feed-34",
+      "filename": "feed-34.jpg",
+      "localPath": "/assets/meigen-feed/feed-34.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-34.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-34.jpg",
+      "mimeType": "image/jpeg",
+      "size": 135039
+    },
+    {
+      "id": "feed-35",
+      "filename": "feed-35.jpg",
+      "localPath": "/assets/meigen-feed/feed-35.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-35.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-35.jpg",
+      "mimeType": "image/jpeg",
+      "size": 326294
+    },
+    {
+      "id": "feed-36",
+      "filename": "feed-36.jpg",
+      "localPath": "/assets/meigen-feed/feed-36.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-36.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-36.jpg",
+      "mimeType": "image/jpeg",
+      "size": 134679
+    },
+    {
+      "id": "feed-37",
+      "filename": "feed-37.jpg",
+      "localPath": "/assets/meigen-feed/feed-37.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-37.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-37.jpg",
+      "mimeType": "image/jpeg",
+      "size": 252158
+    },
+    {
+      "id": "feed-38",
+      "filename": "feed-38.jpg",
+      "localPath": "/assets/meigen-feed/feed-38.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-38.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-38.jpg",
+      "mimeType": "image/jpeg",
+      "size": 169533
+    },
+    {
+      "id": "feed-39",
+      "filename": "feed-39.jpg",
+      "localPath": "/assets/meigen-feed/feed-39.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-39.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-39.jpg",
+      "mimeType": "image/jpeg",
+      "size": 99127
+    },
+    {
+      "id": "feed-40",
+      "filename": "feed-40.jpg",
+      "localPath": "/assets/meigen-feed/feed-40.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-40.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-40.jpg",
+      "mimeType": "image/jpeg",
+      "size": 323185
+    },
+    {
+      "id": "feed-41",
+      "filename": "feed-41.jpg",
+      "localPath": "/assets/meigen-feed/feed-41.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-41.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-41.jpg",
+      "mimeType": "image/jpeg",
+      "size": 193156
+    },
+    {
+      "id": "feed-42",
+      "filename": "feed-42.jpg",
+      "localPath": "/assets/meigen-feed/feed-42.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-42.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-42.jpg",
+      "mimeType": "image/jpeg",
+      "size": 108319
+    },
+    {
+      "id": "feed-43",
+      "filename": "feed-43.jpg",
+      "localPath": "/assets/meigen-feed/feed-43.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-43.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-43.jpg",
+      "mimeType": "image/jpeg",
+      "size": 226922
+    },
+    {
+      "id": "feed-44",
+      "filename": "feed-44.jpg",
+      "localPath": "/assets/meigen-feed/feed-44.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-44.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-44.jpg",
+      "mimeType": "image/jpeg",
+      "size": 147420
+    },
+    {
+      "id": "feed-45",
+      "filename": "feed-45.jpg",
+      "localPath": "/assets/meigen-feed/feed-45.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-45.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-45.jpg",
+      "mimeType": "image/jpeg",
+      "size": 155939
+    },
+    {
+      "id": "feed-46",
+      "filename": "feed-46.jpg",
+      "localPath": "/assets/meigen-feed/feed-46.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-46.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-46.jpg",
+      "mimeType": "image/jpeg",
+      "size": 192736
+    },
+    {
+      "id": "feed-47",
+      "filename": "feed-47.jpg",
+      "localPath": "/assets/meigen-feed/feed-47.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-47.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-47.jpg",
+      "mimeType": "image/jpeg",
+      "size": 175928
+    },
+    {
+      "id": "feed-48",
+      "filename": "feed-48.jpg",
+      "localPath": "/assets/meigen-feed/feed-48.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-48.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-48.jpg",
+      "mimeType": "image/jpeg",
+      "size": 102494
+    },
+    {
+      "id": "feed-49",
+      "filename": "feed-49.jpg",
+      "localPath": "/assets/meigen-feed/feed-49.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-49.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-49.jpg",
+      "mimeType": "image/jpeg",
+      "size": 356766
+    },
+    {
+      "id": "feed-50",
+      "filename": "feed-50.jpg",
+      "localPath": "/assets/meigen-feed/feed-50.jpg",
+      "bucket": "cc-berserk",
+      "objectKey": "berserk/generated/meigen-feed/feed-50.jpg",
+      "ossURI": "oss://cc-berserk/berserk/generated/meigen-feed/feed-50.jpg",
+      "mimeType": "image/jpeg",
+      "size": 136835
+    }
+  ]
+}

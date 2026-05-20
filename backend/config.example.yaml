@@ -1,0 +1,32 @@
+app_env: development
+http_addr: ":8080"
+database_url: "postgres://berserk:berserk@localhost:5432/berserk?sslmode=disable"
+public_base_url: "http://127.0.0.1/berserk"
+web_app_id: "berserk.web"
+email_code_ttl_seconds: "90"
+
+smtp_host: ""
+smtp_port: "465"
+smtp_username: ""
+smtp_password: ""
+smtp_from_email: ""
+smtp_from_name: "Berserk AI"
+smtp_tls_mode: "tls"
+
+xai_api_key: ""
+xai_base_url: "https://api-xai.ainaibahub.com/v1"
+xai_responses_path: "/responses"
+xai_main_model: "gpt-5.5"
+xai_image_model: "gpt-image-2"
+generated_image_dir: "generated-images"
+
+# Recommended: keep the OSS bucket private. The backend returns signed URLs for originals and thumbnails.
+oss_bucket: ""
+oss_region: ""
+oss_endpoint: ""
+oss_access_key_id: ""
+oss_access_key_secret: ""
+role_arn: ""
+oss_security_token: ""
+oss_object_prefix: "berserk/generated"
+oss_signed_url_ttl_seconds: "3600"
