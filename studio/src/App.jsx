@@ -1428,12 +1428,15 @@ function SizeEditorModal({ onClose }) {
   useEscape(onClose);
 
   const resetCrop = () => {
-    const ratio = Math.max(0.1, targetWidth / targetHeight);
-    let w = 74;
-    let h = w / ratio;
-    if (h > 82) {
-      h = 82;
-      w = h * ratio;
+    const image = imageRef.current;
+    const targetRatio = Math.max(0.1, targetWidth / targetHeight);
+    const imageRatio = image?.naturalWidth && image?.naturalHeight ? image.naturalWidth / image.naturalHeight : targetRatio;
+    let w = 100;
+    let h = 100;
+    if (imageRatio > targetRatio) {
+      w = (targetRatio / imageRatio) * 100;
+    } else if (imageRatio < targetRatio) {
+      h = (imageRatio / targetRatio) * 100;
     }
     setCrop({ x: (100 - w) / 2, y: (100 - h) / 2, w, h });
   };
@@ -1448,11 +1451,7 @@ function SizeEditorModal({ onClose }) {
       const rect = imageRef.current.getBoundingClientRect();
       const dx = ((event.clientX - dragRef.current.startX) / rect.width) * 100;
       const dy = ((event.clientY - dragRef.current.startY) / rect.height) * 100;
-      setCrop((current) => ({
-        ...current,
-        x: clamp(dragRef.current.crop.x + dx, 0, 100 - current.w),
-        y: clamp(dragRef.current.crop.y + dy, 0, 100 - current.h),
-      }));
+      setCrop(() => resizeCrop(dragRef.current.crop, dx, dy, dragRef.current.mode));
     };
     const handleUp = () => {
       dragRef.current = null;
@@ -1525,7 +1524,7 @@ function SizeEditorModal({ onClose }) {
                     setTargetHeight(preset.height);
                   }}
                 >
-                  {preset.label}
+                  <span>{preset.label}</span>
                   <small>{preset.width} x {preset.height}</small>
                 </button>
               ))}
@@ -1554,13 +1553,20 @@ function SizeEditorModal({ onClose }) {
                   style={{ left: `${crop.x}%`, top: `${crop.y}%`, width: `${crop.w}%`, height: `${crop.h}%` }}
                   onPointerDown={(event) => {
                     event.preventDefault();
-                    dragRef.current = { startX: event.clientX, startY: event.clientY, crop };
+                    dragRef.current = { startX: event.clientX, startY: event.clientY, crop, mode: 'move' };
                   }}
                 >
-                  <span />
-                  <span />
-                  <span />
-                  <span />
+                  {['nw', 'ne', 'se', 'sw'].map((mode) => (
+                    <span
+                      key={mode}
+                      className={`crop-handle ${mode}`}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        event.preventDefault();
+                        dragRef.current = { startX: event.clientX, startY: event.clientY, crop, mode };
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             ) : (
@@ -2102,6 +2108,31 @@ function formatViews(value) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function resizeCrop(base, dx, dy, mode) {
+  if (mode === 'move') {
+    return {
+      ...base,
+      x: clamp(base.x + dx, 0, 100 - base.w),
+      y: clamp(base.y + dy, 0, 100 - base.h),
+    };
+  }
+  const minSize = 8;
+  let left = base.x;
+  let top = base.y;
+  let right = base.x + base.w;
+  let bottom = base.y + base.h;
+  if (mode.includes('w')) left = clamp(base.x + dx, 0, right - minSize);
+  if (mode.includes('e')) right = clamp(base.x + base.w + dx, left + minSize, 100);
+  if (mode.includes('n')) top = clamp(base.y + dy, 0, bottom - minSize);
+  if (mode.includes('s')) bottom = clamp(base.y + base.h + dy, top + minSize, 100);
+  return {
+    x: left,
+    y: top,
+    w: right - left,
+    h: bottom - top,
+  };
 }
 
 async function getJSON(path, token = '') {

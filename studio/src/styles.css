@@ -2496,14 +2496,15 @@ a {
   z-index: 3100;
   display: grid;
   place-items: center;
-  padding: 28px;
+  padding: 20px;
   background: rgba(24, 20, 34, 0.54);
   backdrop-filter: blur(14px);
 }
 
 .size-editor {
   position: relative;
-  width: min(1120px, calc(100vw - 42px));
+  width: min(1180px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
   border: 1px solid rgba(131, 72, 255, 0.22);
   border-radius: 26px;
   padding: 26px;
@@ -2547,7 +2548,7 @@ a {
 
 .size-editor-body {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   gap: 26px;
 }
 
@@ -2586,15 +2587,21 @@ a {
   min-height: 48px;
   border: 1px solid #ede5f9;
   border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 0 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: 3px;
+  padding: 8px 12px;
   overflow: hidden;
   color: #332a45;
   background: #fff;
   font-weight: 900;
+}
+
+.size-presets button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .size-presets button.active {
@@ -2604,7 +2611,6 @@ a {
 }
 
 .size-presets small {
-  flex: 0 0 auto;
   color: #80758f;
   font-size: 11px;
   font-weight: 850;
@@ -2659,7 +2665,7 @@ a {
 
 .size-crop-area {
   min-width: 0;
-  min-height: 570px;
+  min-height: min(570px, calc(100vh - 190px));
   border: 1px solid #eadff8;
   border-radius: 22px;
   display: grid;
@@ -2678,14 +2684,14 @@ a {
 .size-image-wrap {
   position: relative;
   max-width: 100%;
-  max-height: 570px;
+  max-height: min(570px, calc(100vh - 190px));
   line-height: 0;
 }
 
 .size-image-wrap > img {
   display: block;
   max-width: 100%;
-  max-height: 570px;
+  max-height: min(570px, calc(100vh - 190px));
   object-fit: contain;
   user-select: none;
 }
@@ -2701,33 +2707,38 @@ a {
     0 16px 34px rgba(116, 23, 255, 0.18);
 }
 
-.crop-frame span {
+.crop-handle {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border: 2px solid #fff;
   border-radius: 50%;
   background: #8b35ff;
+  box-shadow: 0 2px 8px rgba(65, 22, 130, 0.28);
 }
 
-.crop-frame span:nth-child(1) {
-  top: -7px;
-  left: -7px;
+.crop-handle.nw {
+  top: -9px;
+  left: -9px;
+  cursor: nwse-resize;
 }
 
-.crop-frame span:nth-child(2) {
-  top: -7px;
-  right: -7px;
+.crop-handle.ne {
+  top: -9px;
+  right: -9px;
+  cursor: nesw-resize;
 }
 
-.crop-frame span:nth-child(3) {
-  right: -7px;
-  bottom: -7px;
+.crop-handle.se {
+  right: -9px;
+  bottom: -9px;
+  cursor: nwse-resize;
 }
 
-.crop-frame span:nth-child(4) {
-  bottom: -7px;
-  left: -7px;
+.crop-handle.sw {
+  bottom: -9px;
+  left: -9px;
+  cursor: nesw-resize;
 }
 
 .size-empty {
