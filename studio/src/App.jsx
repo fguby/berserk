@@ -491,7 +491,7 @@ function App() {
               <GenerationHistory tasks={generationTasks} onRefresh={loadGenerationTasks} />
             ) : (
               <>
-                <KomikoComposer models={imageModels} feedItems={feedItems} activeQuery={galleryQuery} onQueryChange={setGalleryQuery} onGenerate={handleGenerateImage} />
+                {view === 'home' ? <KomikoComposer models={imageModels} feedItems={feedItems} activeQuery={galleryQuery} onQueryChange={setGalleryQuery} onGenerate={handleGenerateImage} /> : null}
                 {feedError ? <p className="feed-error">{feedError}</p> : null}
                 <MasonryFeed items={feedItems} loading={feedLoading} onOpen={setSelectedImage} onLike={handleLikeImage} onFeature={handleFeatureImage} onFavorite={handleFavoriteImage} />
               </>
@@ -1043,11 +1043,10 @@ function GallerySkeleton() {
 }
 
 function GenerationHistory({ tasks, onRefresh }) {
-  const statusText = {
-    queued: '排队中',
-    running: '生成中',
-    succeeded: '已完成',
-    failed: '失败',
+  const counts = {
+    active: tasks.filter((task) => ['queued', 'running'].includes(task.status)).length,
+    succeeded: tasks.filter((task) => task.status === 'succeeded').length,
+    failed: tasks.filter((task) => task.status === 'failed').length,
   };
   return (
     <section className="generation-history">
@@ -1060,27 +1059,73 @@ function GenerationHistory({ tasks, onRefresh }) {
           <RefreshCw size={16} /> 刷新
         </button>
       </header>
+      <div className="history-summary" aria-label="生成任务统计">
+        <span>
+          <i className="active" />
+          <strong>{counts.active}</strong>
+          <small>生成中</small>
+        </span>
+        <span>
+          <i className="success" />
+          <strong>{counts.succeeded}</strong>
+          <small>已完成</small>
+        </span>
+        <span>
+          <i className="failed" />
+          <strong>{counts.failed}</strong>
+          <small>失败</small>
+        </span>
+      </div>
       {tasks.length === 0 ? (
-        <div className="history-empty">暂无生成记录</div>
+        <div className="history-empty">
+          <Sparkles size={30} />
+          <strong>暂无生成记录</strong>
+          <span>提交一次生图任务后，进度会在这里展示。</span>
+        </div>
       ) : (
         <div className="history-list">
           {tasks.map((task) => (
             <article className={`history-task ${task.status}`} key={task.id}>
-              <div>
-                {task.resultImage ? <img src={task.resultImage} alt="" /> : <Sparkles size={22} />}
+              <div className="history-thumb">
+                {task.resultImage ? <img src={task.resultImage} alt="" /> : <Sparkles size={24} />}
               </div>
-              <section>
-                <strong>{statusText[task.status] || task.status}</strong>
+              <section className="history-body">
+                <div className="history-title-row">
+                  <strong>{historyStatusText(task.status)}</strong>
+                  <span className={`history-status ${task.status}`}>{historyStatusText(task.status)}</span>
+                </div>
                 <p>{task.prompt}</p>
-                {task.errorMessage ? <em>{task.errorMessage}</em> : null}
+                {task.errorMessage ? <em>{historyErrorMessage(task.errorMessage)}</em> : null}
+                {['queued', 'running'].includes(task.status) ? <b className="history-progress" /> : null}
+                <div className="history-meta">
+                  <span>{task.modelName || 'GPT Image'}</span>
+                  <span>{task.size || '自动'}</span>
+                  <span>{task.creditsCost || 0} 积分</span>
+                  <span>{relativeTime(task.createdAt)}</span>
+                </div>
               </section>
-              <span>{task.modelName || 'GPT Image'} · {task.creditsCost || 0} 积分</span>
             </article>
           ))}
         </div>
       )}
     </section>
   );
+}
+
+function historyStatusText(status) {
+  const statusText = {
+    queued: '排队中',
+    running: '生成中',
+    succeeded: '已完成',
+    failed: '失败',
+  };
+  return statusText[status] || '未知状态';
+}
+
+function historyErrorMessage(message) {
+  const text = String(message || '').trim();
+  if (!text) return '';
+  return localizeError(text, '生成失败，请稍后重试');
 }
 
 function ImagePreview({ item, models, currentUser, onClose, onLike, onFavorite, onGenerate, onMessage }) {
@@ -1961,8 +2006,10 @@ function localizeError(message, fallbackMessage = '操作失败，请稍后重�
     'prompt is required': '请输入提示词',
     'invalid image model': '请选择可用的生图模型',
     'create image task failed': '创建生成任务失败，请稍后重试',
+    '图片尺寸不符合模型要求，系统已修正尺寸配置，请重新生成': '图片尺寸不符合模型要求，系统已修正尺寸配置，请重新生成',
   };
   if (dictionary[text]) return dictionary[text];
+  if (/invalid size|divisible by 16|invalid_value/i.test(text)) return '图片尺寸不符合模型要求，系统已修正尺寸配置，请重新生成';
   if (/^[\x00-\x7F\s.,:;!?()'"/_-]+$/.test(text)) return fallbackMessage;
   return text || fallbackMessage;
 }
