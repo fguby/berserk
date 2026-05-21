@@ -115,6 +115,35 @@ func TestWebImageErrorMessageLocalizesInvalidSize(t *testing.T) {
 	}
 }
 
+func TestSignGalleryImageUsesR2PresignedURL(t *testing.T) {
+	server := NewServer(ServerConfig{
+		R2Bucket:              "berserk-bucket",
+		R2Endpoint:            "https://example-account.r2.cloudflarestorage.com",
+		R2AccessKeyID:         "test-access-key",
+		R2AccessKeySecret:     "test-secret-key",
+		R2SignedURLTTLSeconds: "900",
+		Store:                 &webImageTestStore{},
+	})
+
+	item, err := server.signGalleryImage(context.Background(), models.WebGalleryImage{
+		ID:           "gallery-id",
+		Image:        "r2://berserk-bucket/berserk/generated/example.png",
+		ThumbnailURL: "https://public.example.com/berserk/generated/example.png",
+	})
+	if err != nil {
+		t.Fatalf("sign gallery image: %v", err)
+	}
+	if strings.HasPrefix(item.Image, "r2://") || strings.Contains(item.Image, "public.example.com") {
+		t.Fatalf("expected R2 image to be presigned, got %q", item.Image)
+	}
+	if !strings.Contains(item.Image, "X-Amz-Signature=") || !strings.Contains(item.Image, "X-Amz-Expires=900") {
+		t.Fatalf("expected signed R2 image URL, got %q", item.Image)
+	}
+	if item.ThumbnailURL != item.Image {
+		t.Fatalf("expected thumbnail to use signed R2 URL, got %q and %q", item.ThumbnailURL, item.Image)
+	}
+}
+
 type webImageTestStore struct{}
 
 func (s *webImageTestStore) CreateEmailUser(context.Context, string, string, string) (models.User, error) {

@@ -37,7 +37,5 @@ r2_bucket: ""
 r2_endpoint: ""
 r2_access_key_id: ""
 r2_access_key_secret: ""
-# Optional public/custom domain. Leave empty to let the backend return signed private URLs.
-r2_public_base_url: ""
 r2_object_prefix: "berserk/generated"
 r2_signed_url_ttl_seconds: "3600"

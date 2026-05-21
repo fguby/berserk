@@ -47,7 +47,6 @@ type ServerConfig struct {
 	R2Endpoint             string
 	R2AccessKeyID          string
 	R2AccessKeySecret      string
-	R2PublicBaseURL        string
 	R2ObjectPrefix         string
 	R2SignedURLTTLSeconds  string
 	Store                  store.BerserkStore
@@ -85,7 +84,6 @@ type Server struct {
 	r2Endpoint         string
 	r2AccessKeyID      string
 	r2AccessKeySecret  string
-	r2PublicBaseURL    string
 	r2ObjectPrefix     string
 	r2SignedURLTTL     time.Duration
 	store              store.BerserkStore
@@ -159,7 +157,6 @@ func NewServer(cfg ServerConfig) *Server {
 		r2Endpoint:         normalizeR2Endpoint(cfg.R2Endpoint),
 		r2AccessKeyID:      strings.TrimSpace(cfg.R2AccessKeyID),
 		r2AccessKeySecret:  strings.TrimSpace(cfg.R2AccessKeySecret),
-		r2PublicBaseURL:    strings.TrimRight(strings.TrimSpace(cfg.R2PublicBaseURL), "/"),
 		r2ObjectPrefix:     strings.Trim(strings.TrimSpace(cfg.R2ObjectPrefix), "/"),
 		r2SignedURLTTL:     signedURLTTL(cfg.R2SignedURLTTLSeconds),
 		store:              cfg.Store,

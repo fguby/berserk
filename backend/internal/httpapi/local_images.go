@@ -202,7 +202,7 @@ func (s *Server) uploadGeneratedImageToR2(ctx context.Context, objectKey string,
 		Body:          bytes.NewReader(data),
 		ContentLength: &contentLength,
 		ContentType:   aws.String(mime),
-		CacheControl:  aws.String("public, max-age=31536000, immutable"),
+		CacheControl:  aws.String("private, max-age=3600"),
 	})
 	return err
 }
@@ -233,9 +233,6 @@ func (s *Server) signedR2ObjectURL(ctx context.Context, bucket string, objectKey
 	objectKey = strings.TrimLeft(strings.TrimSpace(objectKey), "/")
 	if bucket == "" || objectKey == "" {
 		return "", errors.New("invalid r2 object")
-	}
-	if s.r2PublicBaseURL != "" {
-		return s.r2PublicBaseURL + "/" + pathEscapedObjectKey(objectKey), nil
 	}
 	presigner := s3.NewPresignClient(s.r2Client())
 	result, err := presigner.PresignGetObject(ctx, &s3.GetObjectInput{
@@ -378,12 +375,4 @@ func parseR2StorageURI(value string) (string, string, bool) {
 		return "", "", false
 	}
 	return parsed.Host, key, true
-}
-
-func pathEscapedObjectKey(objectKey string) string {
-	segments := strings.Split(strings.TrimLeft(objectKey, "/"), "/")
-	for i, segment := range segments {
-		segments[i] = url.PathEscape(segment)
-	}
-	return strings.Join(segments, "/")
 }

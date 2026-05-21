@@ -65,7 +65,6 @@ func main() {
 		R2Endpoint:             cfg.R2Endpoint,
 		R2AccessKeyID:          cfg.R2AccessKeyID,
 		R2AccessKeySecret:      cfg.R2AccessKeySecret,
-		R2PublicBaseURL:        cfg.R2PublicBaseURL,
 		R2ObjectPrefix:         cfg.R2ObjectPrefix,
 		R2SignedURLTTLSeconds:  cfg.R2SignedURLTTLSeconds,
 		Store:                  ticketStore,

@@ -30,9 +30,8 @@ New generated images are uploaded to Cloudflare R2 when all `R2_*` settings are 
 - `R2_BUCKET`: R2 bucket name.
 - `R2_ENDPOINT`: S3-compatible endpoint, usually `https://<account_id>.r2.cloudflarestorage.com`.
 - `R2_ACCESS_KEY_ID`, `R2_ACCESS_KEY_SECRET`: R2 API token credentials.
-- `R2_PUBLIC_BASE_URL`: optional public/custom domain. Leave empty to return short-lived signed URLs.
 - `R2_OBJECT_PREFIX`: object prefix, defaults to `berserk/generated`.
-- `R2_SIGNED_URL_TTL_SECONDS`: signed URL lifetime, defaults to `3600`.
+- `R2_SIGNED_URL_TTL_SECONDS`: signed URL lifetime for gallery and detail image display, defaults to `3600`.
 
 ## Aliyun LLM settings
 

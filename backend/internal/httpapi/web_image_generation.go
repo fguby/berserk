@@ -490,7 +490,7 @@ func (s *Server) signGeneratedImages(ctx context.Context, images []models.WebGen
 				return nil, err
 			}
 			next.URL = url
-			next.ThumbnailURL = firstNonEmpty(next.ThumbnailURL, url)
+			next.ThumbnailURL = url
 		}
 		signed = append(signed, next)
 	}
@@ -528,7 +528,7 @@ func (s *Server) signGalleryImage(ctx context.Context, item models.WebGalleryIma
 			return item, err
 		}
 		item.Image = url
-		item.ThumbnailURL = firstNonEmpty(item.ThumbnailURL, url)
+		item.ThumbnailURL = url
 	}
 	if bucket, key, ok := parseOSSStorageURI(item.AuthorAvatarURL); ok {
 		url, err := s.signedOSSObjectURL(ctx, bucket, key, "")

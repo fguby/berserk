@@ -38,7 +38,6 @@ type Config struct {
 	R2Endpoint             string
 	R2AccessKeyID          string
 	R2AccessKeySecret      string
-	R2PublicBaseURL        string
 	R2ObjectPrefix         string
 	R2SignedURLTTLSeconds  string
 }
@@ -77,7 +76,6 @@ func Load() Config {
 		R2Endpoint:             getEnv("R2_ENDPOINT", fileConfig.value("r2_endpoint", "")),
 		R2AccessKeyID:          getEnv("R2_ACCESS_KEY_ID", fileConfig.value("r2_access_key_id", "")),
 		R2AccessKeySecret:      getEnv("R2_ACCESS_KEY_SECRET", fileConfig.value("r2_access_key_secret", "")),
-		R2PublicBaseURL:        getEnv("R2_PUBLIC_BASE_URL", fileConfig.value("r2_public_base_url", "")),
 		R2ObjectPrefix:         getEnv("R2_OBJECT_PREFIX", fileConfig.value("r2_object_prefix", "berserk/generated")),
 		R2SignedURLTTLSeconds:  getEnv("R2_SIGNED_URL_TTL_SECONDS", fileConfig.value("r2_signed_url_ttl_seconds", "3600")),
 	}
