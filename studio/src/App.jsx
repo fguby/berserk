@@ -75,7 +75,7 @@ const filterChips = [
   { label: '原神' },
 ];
 
-const generationSizes = ['1:1', '3:4', '4:3', '9:16', '16:9', '2:3', '3:2'];
+const generationSizes = ['自动', '1:1', '3:4', '4:5', '2:3', '9:16', '4:3', '5:4', '3:2', '16:9', '21:9'];
 
 const styleCategories = [
   { id: 'favorites', label: '收藏' },
@@ -128,7 +128,7 @@ const creditPackages = [
     name: '限时体验包',
     price: '¥1',
     credits: '10 积分',
-    icon: '/pricing-icons/credits-100.png',
+    icon: '/pricing-icons/package-trial.png',
     tone: 'blue',
     features: ['限时体验专享', '可生成约 2 次基础模型图片', '适合测试出图流程', '购买后立即到账'],
   },
@@ -137,7 +137,7 @@ const creditPackages = [
     name: '灵感入门包',
     price: '¥10',
     credits: '100 积分',
-    icon: '/pricing-icons/credits-100.png',
+    icon: '/pricing-icons/package-100.png',
     tone: 'blue',
     features: ['适合轻量试用', '可生成约 20 次图片', '购买后立即到账', '积分长期保留'],
   },
@@ -146,7 +146,7 @@ const creditPackages = [
     name: '创作加速包',
     price: '¥49',
     credits: '500 积分',
-    icon: '/pricing-icons/credits-500.png',
+    icon: '/pricing-icons/package-500.png',
     popular: true,
     tone: 'purple',
     features: ['适合日常创作', '可生成约 100 次图片', '比入门包更划算', '购买后立即到账'],
@@ -156,7 +156,7 @@ const creditPackages = [
     name: '高频创作包',
     price: '¥95',
     credits: '1,000 积分',
-    icon: '/pricing-icons/credits-1000.png',
+    icon: '/pricing-icons/package-1000.png',
     tone: 'gold',
     features: ['适合高频出图', '可生成约 200 次图片', '批量探索不同风格', '购买后立即到账'],
   },
@@ -244,8 +244,10 @@ function App() {
   const [feedItems, setFeedItems] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
   const [feedError, setFeedError] = useState('');
+  const [galleryQuery, setGalleryQuery] = useState('');
   const [imageModels, setImageModels] = useState(defaultImageModels);
   const [packageItems, setPackageItems] = useState(creditPackages);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
 
   useEffect(() => {
     getJSON('/api/v1/images/models')
@@ -273,7 +275,8 @@ function App() {
     let cancelled = false;
     setFeedLoading(true);
     const favoriteQuery = view === 'favorites' ? '&favorite=true' : '';
-    getJSON(`/api/v1/images/gallery?limit=100${favoriteQuery}`, authSession?.token)
+    const searchQuery = galleryQuery ? `&q=${encodeURIComponent(galleryQuery)}` : '';
+    getJSON(`/api/v1/images/gallery?limit=100${favoriteQuery}${searchQuery}`, authSession?.token)
       .then(async (payload) => {
         const nextItems = (payload?.items || []).map(normalizeGalleryItem);
         await preloadGalleryImages(nextItems.slice(0, 16).map((item) => item.src));
@@ -292,7 +295,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [authSession?.token, view]);
+  }, [authSession?.token, view, galleryQuery]);
 
   const handleAuthSuccess = (session) => {
     setAuthSession(session);
@@ -312,7 +315,18 @@ function App() {
     window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextSession));
   };
 
-  const handleGenerateImage = async ({ prompt, style, size, modelID, images = [] }) => {
+  const handleGenerateImage = async ({
+    prompt,
+    style,
+    size = '3:4',
+    modelID,
+    images = [],
+    quality = 'medium',
+    n = 1,
+    negativePrompt = '',
+    resolution = 'auto',
+    lockedSeed = false,
+  }) => {
     if (!authSession?.token) {
       setAuthOpen(true);
       return;
@@ -321,10 +335,13 @@ function App() {
       prompt,
       style,
       size: sizeToBackendSize(size),
-      quality: 'medium',
-      n: 1,
+      quality,
+      n,
       modelID,
       images,
+      negativePrompt,
+      resolution,
+      lockedSeed,
     }, '生成失败');
     if (payload?.user) handleSessionUser(payload.user);
     const created = (payload?.images || []).map((image, index) => ({
@@ -334,7 +351,7 @@ function App() {
       src: image.thumbnailURL || image.url,
       fullSrc: image.url,
       width: 1024,
-      height: size.includes('16:9') || size.includes('4:3') ? 768 : 1365,
+      height: size.includes('16:9') || size.includes('4:3') || size.includes('21:9') ? 768 : 1365,
       author: authSession.user?.displayName || authSession.user?.email || 'Berserk AI',
       likes: 0,
       likeCount: 0,
@@ -401,10 +418,10 @@ function App() {
       ) : (
         <>
           <TopBar currentUser={authSession?.user} theme={theme} onThemeChange={setTheme} onAuthOpen={() => setAuthOpen(true)} />
-          <Sidebar currentUser={authSession?.user} currentView={view} onNavigate={setView} onProfileOpen={() => setProfileOpen(true)} onAuthOpen={() => setAuthOpen(true)} onLogout={handleLogout} />
+          <Sidebar currentUser={authSession?.user} currentView={view} onNavigate={setView} onProfileOpen={() => setProfileOpen(true)} onAuthOpen={() => setAuthOpen(true)} onLogout={handleLogout} onComingSoon={() => setComingSoonOpen(true)} />
           <main className="workspace">
             <MobileTopbar onAuthOpen={() => setAuthOpen(true)} />
-            <KomikoComposer models={imageModels} feedItems={feedItems} onGenerate={handleGenerateImage} />
+            <KomikoComposer models={imageModels} feedItems={feedItems} activeQuery={galleryQuery} onQueryChange={setGalleryQuery} onGenerate={handleGenerateImage} />
             {feedError ? <p className="feed-error">{feedError}</p> : null}
             <MasonryFeed items={feedItems} loading={feedLoading} onOpen={setSelectedImage} onLike={handleLikeImage} onFeature={handleFeatureImage} onFavorite={handleFavoriteImage} />
           </main>
@@ -413,6 +430,7 @@ function App() {
       {selectedImage ? <ImagePreview item={selectedImage} models={imageModels} onClose={() => setSelectedImage(null)} onLike={handleLikeImage} onFavorite={handleFavoriteImage} onGenerate={handleGenerateImage} /> : null}
       {profileOpen ? <ProfileModal session={authSession} onClose={() => setProfileOpen(false)} onAuthOpen={() => setAuthOpen(true)} onUserChange={handleSessionUser} /> : null}
       {authOpen ? <AuthModal onClose={() => setAuthOpen(false)} onSuccess={handleAuthSuccess} /> : null}
+      {comingSoonOpen ? <ComingSoonModal onClose={() => setComingSoonOpen(false)} /> : null}
     </div>
   );
 }
@@ -461,7 +479,7 @@ function TopBar({ currentUser, theme, onThemeChange, onAuthOpen }) {
   );
 }
 
-function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOpen, onLogout }) {
+function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOpen, onLogout, onComingSoon }) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#" aria-label="Berserk AI" onClick={() => onNavigate('home')}>
@@ -499,18 +517,14 @@ function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOp
         </button>
         <nav className="side-nav side-subnav" aria-label="AI 应用">
           {aiAppItems.map(({ label, icon: Icon }) => (
-            <a href="#inspiration-feed" key={label}>
+            <button type="button" key={label} onClick={onComingSoon}>
               <Icon size={17} />
               <span>{label}</span>
-            </a>
+            </button>
           ))}
         </nav>
       </div>
       <div className="sidebar-spacer" />
-      <div className="zap-line">
-        <span>--</span>
-        <strong>0 Zaps</strong>
-      </div>
       <section className="upgrade-card">
         <button type="button" onClick={() => onNavigate('pricing')}>
           <Sparkles size={18} /> 立即升级
@@ -519,6 +533,7 @@ function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOp
       {currentUser ? (
         <div className="session-card">
           <span>{currentUser.email || '已登录'}</span>
+          <strong className="session-credits">{Number(currentUser.credits || 0).toLocaleString('zh-CN')} 积分</strong>
           <button type="button" onClick={onLogout}>
             <LogOut size={16} /> 退出
           </button>
@@ -528,11 +543,10 @@ function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOp
           登录
         </button>
       )}
-      <div className="social-row" aria-hidden="true">
-        <span>𝕏</span>
-        <span>◎</span>
-        <span>◐</span>
-        <span>♬</span>
+      <div className="social-row">
+        <a href="https://www.douyin.com/user/MS4wLjABAAAAPctRiYcwFwNx7JTqw55gxq20_jzroA_b48W1edHc7eI" target="_blank" rel="noreferrer" aria-label="Berserk AI 抖音">
+          ♬
+        </a>
       </div>
     </aside>
   );
@@ -555,7 +569,7 @@ function MobileTopbar({ onAuthOpen }) {
   );
 }
 
-function KomikoComposer({ models, feedItems, onGenerate }) {
+function KomikoComposer({ models, feedItems, activeQuery, onQueryChange, onGenerate }) {
   const [expanded, setExpanded] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState('3:4');
@@ -571,6 +585,12 @@ function KomikoComposer({ models, feedItems, onGenerate }) {
   const fileInputRef = useRef(null);
   const dynamicTags = useMemo(() => tagsFromImages(feedItems), [feedItems]);
   const currentModel = models.find((model) => model.id === selectedModel) || models[0] || defaultImageModels[0];
+  const applyQuery = (value) => {
+    const query = value === '所有帖子' ? '' : value.trim();
+    onQueryChange(query);
+    setSearchText(query);
+    setSearchOpen(false);
+  };
 
   useEffect(() => {
     if (!models.some((model) => model.id === selectedModel)) {
@@ -693,7 +713,12 @@ function KomikoComposer({ models, feedItems, onGenerate }) {
             <Flame size={16} /> 热门 <ChevronDown size={15} />
           </button>
           {dynamicTags.map((label, index) => (
-            <button className={label === '精选' ? 'active-chip' : label === 'BerserkAIConfession' ? 'featured-chip' : ''} type="button" key={label}>
+            <button
+              className={`${label === '精选' ? 'active-chip' : label === 'BerserkAIConfession' ? 'featured-chip' : ''}${activeQuery === label || (!activeQuery && label === '所有帖子') ? ' selected' : ''}`}
+              type="button"
+              key={label}
+              onClick={() => applyQuery(label)}
+            >
               {label === '精选' ? <Star size={15} /> : index > 1 ? <Hash size={14} /> : null}
               {label}
             </button>
@@ -704,7 +729,15 @@ function KomikoComposer({ models, feedItems, onGenerate }) {
         <div className="search-card-overlay" onClick={() => setSearchOpen(false)}>
           <div className="filter-search-popover" onClick={(event) => event.stopPropagation()}>
             <Search size={24} />
-            <input value={searchText} onChange={(event) => setSearchText(event.target.value)} autoFocus placeholder="搜索帖子或生成记录" />
+            <input
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') applyQuery(searchText);
+              }}
+              autoFocus
+              placeholder="搜索帖子或生成记录"
+            />
             <button type="button" aria-label="关闭搜索" onClick={() => setSearchOpen(false)}>
               <X size={20} />
             </button>
@@ -1005,10 +1038,21 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
   const [promptText, setPromptText] = useState(item.promptZh || '');
   const [selectedModel, setSelectedModel] = useState(item.modelID || models[0]?.id || 'gpt-image');
   const [selectedSize, setSelectedSize] = useState('3:4');
-  const [quality, setQuality] = useState('标准');
+  const [quality, setQuality] = useState('standard');
+  const [quantity, setQuantity] = useState(1);
+  const [lockedSeed, setLockedSeed] = useState(false);
+  const [resolution2K, setResolution2K] = useState(false);
+  const [sizeMenuOpen, setSizeMenuOpen] = useState(false);
+  const [negativePrompt, setNegativePrompt] = useState('');
+  const [localRefs, setLocalRefs] = useState([]);
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef(null);
   const currentModel = models.find((model) => model.id === selectedModel) || models[0] || defaultImageModels[0];
-  const creditCost = currentModel?.creditCost || 5;
+  const creditCost = (currentModel?.creditCost || 5) * quantity;
+  const referenceImages = [
+    ...(useReference ? [{ src: item.fullSrc || item.src, preview: item.src }] : []),
+    ...localRefs,
+  ].slice(0, 5);
 
   useEffect(() => {
     if (!models.some((model) => model.id === selectedModel)) {
@@ -1025,10 +1069,51 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
       style: item.style,
       size: selectedSize,
       modelID: selectedModel,
-      images: useReference ? [item.fullSrc || item.src] : [],
+      images: referenceImages.map((image) => image.src),
+      quality,
+      n: quantity,
+      negativePrompt,
+      resolution: resolution2K ? '2k' : 'auto',
+      lockedSeed,
     }))
       .catch((error) => window.alert(getErrorMessage(error, '生成失败')))
       .finally(() => setBusy(false));
+  };
+
+  const improvePrompt = () => {
+    setPromptText((value) => {
+      const clean = value.trim();
+      if (!clean) return clean;
+      if (clean.includes('高质量细节')) return clean;
+      return `${clean}\n\n高质量细节，清晰主体，商业级构图，精致光影，画面干净。`;
+    });
+  };
+
+  const desaturatePrompt = () => {
+    setPromptText((value) => {
+      const clean = value.trim();
+      if (!clean) return clean;
+      if (clean.includes('低饱和')) return clean;
+      return `${clean}\n\n低饱和配色，柔和色阶，避免过度鲜艳。`;
+    });
+  };
+
+  const toggleNegativePrompt = () => {
+    setNegativePrompt((value) => (value ? '' : '低质量、模糊、畸形手部、多余手指、水印、错误文字、过曝、严重噪点'));
+  };
+
+  const handleReferenceFiles = (event) => {
+    const files = Array.from(event.target.files || []).slice(0, Math.max(0, 5 - referenceImages.length));
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setLocalRefs((items) => [...items, { src: reader.result, preview: reader.result }].slice(0, 5));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    event.target.value = '';
   };
 
   return (
@@ -1039,15 +1124,18 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
           <LayoutTemplate size={17} />
         </button>
       </header>
-      <button className="negative-card" type="button">
+      <button className={`negative-card${negativePrompt ? ' active' : ''}`} type="button" onClick={toggleNegativePrompt}>
         <span>反推提示词</span>
-        <small>{useReference ? '从参考图开始创作' : '使用当前提示词创作'}</small>
+        <small>{negativePrompt ? '已启用反向约束' : useReference ? '从参考图开始创作' : '使用当前提示词创作'}</small>
         <img src={item.authorAvatarURL || '/assets/berserk-ai-icon.png'} alt="" />
       </button>
       <div className="reference-strip">
-        <span><ImageIcon size={15} /> {useReference ? '1/5' : '0/5'}</span>
-        {useReference ? <img src={item.src} alt="" /> : null}
-        <button type="button"><Plus size={20} /></button>
+        <span><ImageIcon size={15} /> {referenceImages.length}/5</span>
+        {referenceImages[0] ? <img src={referenceImages[0].preview} alt="" /> : null}
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={referenceImages.length >= 5}>
+          <Plus size={20} />
+        </button>
+        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleReferenceFiles} />
       </div>
       <label className="generate-prompt-box">
         <span>
@@ -1058,20 +1146,44 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
         </span>
         <textarea value={promptText} onChange={(event) => setPromptText(event.target.value)} />
         <div>
-          <button type="button">AI 帮改</button>
-          <button type="button">润色</button>
-          <button type="button">⌘ + ↵</button>
+          <button type="button" onClick={improvePrompt}>AI 帮改</button>
+          <button type="button" onClick={desaturatePrompt}>消色</button>
+          <button type="button" onClick={submit}>⌘ + ↵</button>
         </div>
       </label>
       <div className="generate-setting-row">
-        <button type="button">{selectedSize}</button>
-        <button type="button"><BadgeCheck size={14} /></button>
-        <button type="button">自动</button>
-        <button type="button">2K</button>
+        <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button>
+        <button type="button" onClick={() => setQuantity((value) => (value >= 4 ? 1 : value + 1))}>{quantity}/4</button>
+        <button type="button" className={lockedSeed ? 'active' : ''} onClick={() => setLockedSeed((value) => !value)}><BadgeCheck size={14} /></button>
+        <div className="size-select">
+          <button type="button" onClick={() => setSizeMenuOpen((value) => !value)}>{selectedSize}</button>
+          {sizeMenuOpen ? (
+            <div className="size-menu">
+              {generationSizes.map((size) => (
+                <button
+                  className={selectedSize === size ? 'active' : ''}
+                  type="button"
+                  key={size}
+                  onClick={() => {
+                    setSelectedSize(size);
+                    setSizeMenuOpen(false);
+                  }}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <button type="button" className={resolution2K ? 'active' : ''} onClick={() => setResolution2K((value) => !value)}>2K</button>
       </div>
       <div className="quality-group" aria-label="选择生成质量">
-        {['标准', 'Medium', 'High'].map((label) => (
-          <button className={quality === label ? 'active' : ''} type="button" key={label} onClick={() => setQuality(label)}>
+        {[
+          ['standard', '标准'],
+          ['medium', 'Medium'],
+          ['high', 'High'],
+        ].map(([value, label]) => (
+          <button className={quality === value ? 'active' : ''} type="button" key={value} onClick={() => setQuality(value)}>
             {label}
           </button>
         ))}
@@ -1087,6 +1199,22 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
       <button className="generate-submit" type="button" onClick={submit} disabled={busy || !promptText.trim()}>
         {busy ? '生成中' : `生成图片 ✨ ${creditCost}`}
       </button>
+    </div>
+  );
+}
+
+function ComingSoonModal({ onClose }) {
+  useEscape(onClose);
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <div className="coming-soon-card" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+        <button type="button" aria-label="关闭" onClick={onClose}>
+          <X size={18} />
+        </button>
+        <Sparkles size={30} />
+        <h2>即将上线</h2>
+        <p>AI 应用模块正在打磨中，后续会接入更多创作工具。</p>
+      </div>
     </div>
   );
 }
@@ -1327,6 +1455,7 @@ function PricingPage({ packages, authSession, onAuthOpen, onUserChange, onBack }
         <h1>购买 Berserk AI 积分</h1>
         <button type="button">一次性积分包</button>
         <p>不同模型按配置消耗积分。通过卡密平台购买后，回到本页输入卡密兑换积分。</p>
+        <div className="payment-coming">微信支付、支付宝支付即将上线</div>
       </header>
       <form className="redeem-panel" onSubmit={handleRedeem}>
         <div>
@@ -1557,12 +1686,18 @@ async function registerWithEmail({ email, password, code }) {
 function normalizeCreditPackage(pkg) {
   const credits = Number(pkg.credits || 0);
   const price = `¥${Math.round(Number(pkg.amountCents || 0) / 100)}`;
+  const fallbackIcons = {
+    credits_trial: '/pricing-icons/package-trial.png',
+    credits_100: '/pricing-icons/package-100.png',
+    credits_500: '/pricing-icons/package-500.png',
+    credits_1000: '/pricing-icons/package-1000.png',
+  };
   return {
     id: pkg.id,
     name: pkg.name,
     price,
     credits: `${credits.toLocaleString('zh-CN')} 积分`,
-    icon: pkg.icon || `/pricing-icons/${pkg.id}.png`,
+    icon: pkg.icon || fallbackIcons[pkg.id] || `/pricing-icons/${pkg.id}.png`,
     paymentURL: pkg.paymentURL || '',
     tone: credits >= 1000 ? 'gold' : credits >= 500 ? 'purple' : 'blue',
     popular: credits === 500,
@@ -1572,12 +1707,16 @@ function normalizeCreditPackage(pkg) {
 
 function sizeToBackendSize(size) {
   const map = {
+    '自动': '1024x1365',
     '1:1': '1024x1024',
     '3:4': '1024x1365',
+    '4:5': '1024x1280',
     '4:3': '1365x1024',
     '9:16': '1024x1792',
     '16:9': '1792x1024',
+    '21:9': '1792x768',
     '2:3': '1024x1536',
+    '5:4': '1280x1024',
     '3:2': '1536x1024',
   };
   return map[size] || '1024x1365';

@@ -20,30 +20,30 @@ func (s *Server) generateWebImage(c echo.Context) error {
 	}
 	var request models.WebImageGenerateRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "invalid image generation payload"})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "生图请求参数不正确"})
 	}
 
 	prompt := strings.TrimSpace(request.Prompt)
 	if prompt == "" {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "prompt is required"})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "请输入提示词"})
 	}
 
 	size := firstNonEmpty(request.Size, "1024x1536")
-	quality := firstNonEmpty(request.Quality, "medium")
+	quality := normalizedImageQuality(request.Quality)
 	generationCount := normalizedGenerationCount(request.N)
 	imageModel, err := s.resolveImageModel(c.Request().Context(), request.ModelID)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "invalid image model"})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "请选择可用的生图模型"})
 	}
 	creditsCost := generationCount * imageModel.CreditCost
 	if _, err := s.store.ConsumeCredits(c.Request().Context(), user.ID, creditsCost, "web_image_generation", "web_image", ""); errors.Is(err, store.ErrInsufficientCredits) {
-		return c.JSON(http.StatusPaymentRequired, models.ErrorResponse{Message: "credits are not enough"})
+		return c.JSON(http.StatusPaymentRequired, models.ErrorResponse{Message: "积分不足，请先充值"})
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "consume credits failed"})
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "扣减积分失败，请稍后重试"})
 	}
 
 	images, err := s.callAinaibaImage(c.Request().Context(), models.MangaGenerateRequest{
-		Prompt:  buildWebImagePrompt(prompt, request.Style),
+		Prompt:  buildWebImagePrompt(prompt, request.Style, request),
 		Images:  request.Images,
 		N:       generationCount,
 		Size:    size,
@@ -62,21 +62,21 @@ func (s *Server) generateWebImage(c echo.Context) error {
 		item, err := s.persistGeneratedImage(c.Request().Context(), image)
 		if err != nil {
 			_, _ = s.store.AddCredits(c.Request().Context(), user.ID, creditsCost, "web_image_generation_refund", "web_image", "")
-			return c.JSON(http.StatusBadGateway, models.ErrorResponse{Message: "save generated image failed"})
+			return c.JSON(http.StatusBadGateway, models.ErrorResponse{Message: "保存生成图片失败"})
 		}
 		generated = append(generated, item)
 	}
 	if len(generated) == 0 {
 		_, _ = s.store.AddCredits(c.Request().Context(), user.ID, creditsCost, "web_image_generation_refund", "web_image", "")
-		return c.JSON(http.StatusBadGateway, models.ErrorResponse{Message: "no image result returned"})
+		return c.JSON(http.StatusBadGateway, models.ErrorResponse{Message: "生图服务没有返回图片"})
 	}
 	if _, err := s.store.CreateGalleryImages(c.Request().Context(), user.ID, prompt, strings.TrimSpace(request.Style), imageModel.ID, imageModel.Name, size, quality, imageModel.CreditCost, generated); err != nil {
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "save generated images failed"})
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "保存图库记录失败"})
 	}
 	user, _ = s.store.GetUser(c.Request().Context(), user.ID)
 	responseImages, err := s.signGeneratedImages(c.Request().Context(), generated)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "sign generated images failed"})
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "生成图片访问链接失败"})
 	}
 
 	return c.JSON(http.StatusOK, models.WebImageGenerateResponse{
@@ -110,7 +110,7 @@ func (s *Server) createWebImageTask(c echo.Context) error {
 
 	style := strings.TrimSpace(request.Style)
 	size := firstNonEmpty(request.Size, "1024x1536")
-	quality := firstNonEmpty(request.Quality, "medium")
+	quality := normalizedImageQuality(request.Quality)
 	generationCount := normalizedGenerationCount(request.N)
 	imageModel, err := s.resolveImageModel(c.Request().Context(), request.ModelID)
 	if err != nil {
@@ -195,7 +195,7 @@ func (s *Server) processWebImageTask(task models.WebImageTask, imageRefs []strin
 	}
 
 	images, err := s.callAinaibaImage(ctx, models.MangaGenerateRequest{
-		Prompt:  buildWebImagePrompt(task.Prompt, task.Style),
+		Prompt:  buildWebImagePrompt(task.Prompt, task.Style, models.WebImageGenerateRequest{Quality: task.Quality, Size: task.Size}),
 		Images:  imageRefs,
 		N:       task.N,
 		Size:    task.Size,
@@ -249,6 +249,19 @@ func normalizedGenerationCount(n int) int {
 	return n
 }
 
+func normalizedImageQuality(quality string) string {
+	switch strings.ToLower(strings.TrimSpace(quality)) {
+	case "high":
+		return "high"
+	case "low":
+		return "low"
+	case "standard", "标准", "medium":
+		return "medium"
+	default:
+		return "medium"
+	}
+}
+
 func (s *Server) listWebGallery(c echo.Context) error {
 	limit := queryInt(c, "limit", 30)
 	userID := ""
@@ -266,9 +279,9 @@ func (s *Server) listWebGallery(c echo.Context) error {
 		if !isAuthed {
 			return c.JSON(http.StatusUnauthorized, models.ErrorResponse{Message: "请先登录后查看收藏"})
 		}
-		items, err = s.store.ListFavoriteGalleryImages(c.Request().Context(), userID, limit, c.QueryParam("before"))
+		items, err = s.store.ListFavoriteGalleryImages(c.Request().Context(), userID, limit, c.QueryParam("before"), c.QueryParam("q"))
 	} else {
-		items, err = s.store.ListGalleryImages(c.Request().Context(), userID, limit, c.QueryParam("before"))
+		items, err = s.store.ListGalleryImages(c.Request().Context(), userID, limit, c.QueryParam("before"), c.QueryParam("q"))
 	}
 	if err != nil {
 		if s.logger != nil {
@@ -446,11 +459,9 @@ func (s *Server) signWebImageTask(ctx context.Context, task models.WebImageTask)
 	return task, nil
 }
 
-func buildWebImagePrompt(prompt string, style string) string {
+func buildWebImagePrompt(prompt string, style string, request models.WebImageGenerateRequest) string {
 	style = strings.TrimSpace(style)
-	if style == "" || style == "推荐" {
-		return prompt
-	}
+	parts := []string{prompt}
 
 	stylePrompts := map[string]string{
 		"日漫风":  "Japanese anime and manga style, clean character design, expressive linework, cinematic composition.",
@@ -460,17 +471,39 @@ func buildWebImagePrompt(prompt string, style string) string {
 		"国风漫画": "Chinese fantasy comic style, elegant ink-wash influence, flowing costume details, poetic atmosphere.",
 		"奇幻冒险": "fantasy adventure manga style, epic sense of scale, magical lighting, detailed worldbuilding.",
 	}
-	if stylePrompt, ok := stylePrompts[style]; ok {
-		return prompt + "\n\nStyle preset: " + stylePrompt
+	if style != "" && style != "推荐" {
+		if stylePrompt, ok := stylePrompts[style]; ok {
+			parts = append(parts, "Style preset: "+stylePrompt)
+		} else {
+			parts = append(parts, "Style preset: "+style+". Keep the result polished, high quality, and suitable for a manga image studio gallery.")
+		}
 	}
-	return prompt + "\n\nStyle preset: " + style + ". Keep the result polished, high quality, and suitable for a manga image studio gallery."
+	if size := strings.TrimSpace(request.Size); size != "" {
+		parts = append(parts, "Canvas size: "+size+". Preserve the requested composition ratio.")
+	}
+	if strings.EqualFold(strings.TrimSpace(request.Resolution), "2k") {
+		parts = append(parts, "Resolution target: crisp 2K-ready details with clean edges and readable fine texture.")
+	}
+	if request.LockedSeed {
+		parts = append(parts, "Keep variations consistent with the current composition and character identity as much as possible.")
+	}
+	if strings.TrimSpace(request.NegativePrompt) != "" {
+		parts = append(parts, "Avoid: "+strings.TrimSpace(request.NegativePrompt)+".")
+	}
+	if len(request.Images) > 0 {
+		parts = append(parts, "Use the supplied reference image only for visual guidance. Keep the generated result original.")
+	}
+	return strings.Join(parts, "\n\n")
 }
 
 func webImageErrorMessage(err error) string {
 	message := strings.TrimSpace(err.Error())
 	lower := strings.ToLower(message)
-	if strings.Contains(lower, "api key") || strings.Contains(lower, "authorization") || strings.Contains(lower, "bearer") {
+	if strings.Contains(lower, "api key") || strings.Contains(lower, "api_key") || strings.Contains(lower, "authorization") || strings.Contains(lower, "bearer") {
 		return "图像生成服务的 API Key 未配置或无效，请检查后端 XAI_API_KEY 配置"
+	}
+	if strings.Contains(lower, "no image result") {
+		return "生图服务没有返回图片"
 	}
 	if message == "" {
 		return "图像生成服务暂时不可用"

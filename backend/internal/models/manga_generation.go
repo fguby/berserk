@@ -9,13 +9,16 @@ type MangaGenerateRequest struct {
 }
 
 type WebImageGenerateRequest struct {
-	Prompt  string   `json:"prompt"`
-	Style   string   `json:"style,omitempty"`
-	ModelID string   `json:"modelID,omitempty"`
-	Images  []string `json:"images,omitempty"`
-	N       int      `json:"n,omitempty"`
-	Size    string   `json:"size,omitempty"`
-	Quality string   `json:"quality,omitempty"`
+	Prompt         string   `json:"prompt"`
+	Style          string   `json:"style,omitempty"`
+	ModelID        string   `json:"modelID,omitempty"`
+	Images         []string `json:"images,omitempty"`
+	N              int      `json:"n,omitempty"`
+	Size           string   `json:"size,omitempty"`
+	Quality        string   `json:"quality,omitempty"`
+	NegativePrompt string   `json:"negativePrompt,omitempty"`
+	Resolution     string   `json:"resolution,omitempty"`
+	LockedSeed     bool     `json:"lockedSeed,omitempty"`
 }
 
 type WebGeneratedImage struct {

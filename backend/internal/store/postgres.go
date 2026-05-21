@@ -43,8 +43,8 @@ type BerserkStore interface {
 	ListImageModels(ctx context.Context) ([]models.ImageModel, error)
 	GetImageModel(ctx context.Context, modelID string) (models.ImageModel, error)
 	CreateGalleryImages(ctx context.Context, userID string, prompt string, style string, modelID string, modelName string, size string, quality string, creditsCost int, images []models.WebGeneratedImage) ([]models.WebGalleryImage, error)
-	ListGalleryImages(ctx context.Context, userID string, limit int, before string) ([]models.WebGalleryImage, error)
-	ListFavoriteGalleryImages(ctx context.Context, userID string, limit int, before string) ([]models.WebGalleryImage, error)
+	ListGalleryImages(ctx context.Context, userID string, limit int, before string, query string) ([]models.WebGalleryImage, error)
+	ListFavoriteGalleryImages(ctx context.Context, userID string, limit int, before string, query string) ([]models.WebGalleryImage, error)
 	SetGalleryImageLike(ctx context.Context, userID string, id string, liked bool) (models.WebGalleryImage, error)
 	SetGalleryImageFavorite(ctx context.Context, userID string, id string, favorited bool) (models.WebGalleryImage, error)
 	SetGalleryImageFeatured(ctx context.Context, userID string, id string, featured bool, promptFeatured bool) (models.WebGalleryImage, error)
@@ -510,18 +510,18 @@ func (p *Postgres) CreateGalleryImages(ctx context.Context, userID string, promp
 	return items, tx.Commit(ctx)
 }
 
-func (p *Postgres) ListGalleryImages(ctx context.Context, userID string, limit int, before string) ([]models.WebGalleryImage, error) {
-	return p.listGalleryImages(ctx, userID, limit, before, false)
+func (p *Postgres) ListGalleryImages(ctx context.Context, userID string, limit int, before string, query string) ([]models.WebGalleryImage, error) {
+	return p.listGalleryImages(ctx, userID, limit, before, false, query)
 }
 
-func (p *Postgres) ListFavoriteGalleryImages(ctx context.Context, userID string, limit int, before string) ([]models.WebGalleryImage, error) {
+func (p *Postgres) ListFavoriteGalleryImages(ctx context.Context, userID string, limit int, before string, query string) ([]models.WebGalleryImage, error) {
 	if strings.TrimSpace(userID) == "" {
 		return nil, ErrNotFound
 	}
-	return p.listGalleryImages(ctx, userID, limit, before, true)
+	return p.listGalleryImages(ctx, userID, limit, before, true, query)
 }
 
-func (p *Postgres) listGalleryImages(ctx context.Context, userID string, limit int, before string, favoritesOnly bool) ([]models.WebGalleryImage, error) {
+func (p *Postgres) listGalleryImages(ctx context.Context, userID string, limit int, before string, favoritesOnly bool, query string) ([]models.WebGalleryImage, error) {
 	if limit < 1 {
 		limit = 20
 	}
@@ -539,6 +539,11 @@ func (p *Postgres) listGalleryImages(ctx context.Context, userID string, limit i
 	favoriteFilter := ""
 	if favoritesOnly {
 		favoriteFilter = "and exists (select 1 from web_gallery_image_favorites fav where fav.image_id = g.id and fav.user_id = " + userParam + "::uuid)"
+	}
+	searchFilter := ""
+	if strings.TrimSpace(query) != "" {
+		args = append(args, "%"+strings.TrimSpace(query)+"%")
+		searchFilter = "and (g.prompt ilike $" + strconv.Itoa(len(args)) + " or g.style ilike $" + strconv.Itoa(len(args)) + " or g.model_name ilike $" + strconv.Itoa(len(args)) + ")"
 	}
 	rows, err := p.pool.Query(ctx, `
 		select g.id::text, coalesce(g.user_id::text, ''),
@@ -569,7 +574,7 @@ func (p *Postgres) listGalleryImages(ctx context.Context, userID string, limit i
 			from web_gallery_image_favorites
 			group by image_id
 		) favorite_counts on favorite_counts.image_id = g.id
-		where g.is_public = true `+cursorFilter+` `+favoriteFilter+`
+		where g.is_public = true `+cursorFilter+` `+favoriteFilter+` `+searchFilter+`
 		order by g.is_featured desc, g.created_at desc
 		limit $1
 	`, args...)

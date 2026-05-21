@@ -325,20 +325,25 @@ a {
   margin-top: 20px;
 }
 
-.side-nav a {
+.side-nav a,
+.side-nav button {
   position: relative;
   height: 39px;
+  border: 0;
   border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 0 13px;
   color: #464157;
+  background: transparent;
   font-size: 14px;
   font-weight: 760;
+  text-align: left;
 }
 
-.side-nav a svg {
+.side-nav a svg,
+.side-nav button svg {
   color: #58536a;
   stroke-width: 2.2;
 }
@@ -388,7 +393,8 @@ a {
   margin-top: 19px;
 }
 
-.side-subnav a {
+.side-subnav a,
+.side-subnav button {
   height: 38px;
   padding-left: 12px;
   font-size: 13px;
@@ -398,14 +404,30 @@ a {
   flex: 1;
 }
 
-.zap-line {
-  height: 32px;
+.credit-balance {
+  min-height: 46px;
+  border: 1px solid #eadfff;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #17142a;
+  gap: 10px;
+  padding: 0 13px;
+  color: #4b286f;
+  background: linear-gradient(135deg, #fbf7ff, #f0e8ff);
   font-size: 13px;
   font-weight: 900;
+}
+
+.credit-balance span {
+  color: #7f7199;
+  font-weight: 850;
+}
+
+.credit-balance strong {
+  color: #4f17d8;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .upgrade-card {
@@ -457,21 +479,33 @@ a {
   white-space: nowrap;
 }
 
-.social-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 28px;
+.session-credits {
+  display: block;
+  margin-top: 6px;
+  color: #6828f3;
+  font-size: 13px;
+  font-weight: 950;
 }
 
-.social-row span {
-  width: 25px;
-  height: 25px;
+.social-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.social-row a {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e8e1f4;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #686275;
-  font-size: 13px;
+  color: #6d28f6;
+  background: #fff;
+  font-size: 16px;
   font-weight: 900;
+  text-decoration: none;
 }
 
 .workspace {
@@ -798,6 +832,12 @@ a {
   color: #5b35d5;
   background: #f1edff;
   box-shadow: inset 0 0 0 1px #b7a4ff;
+}
+
+.filter-row button.selected {
+  color: #fff;
+  background: linear-gradient(135deg, #6d32ff, #b538ff);
+  box-shadow: 0 8px 18px rgba(112, 42, 246, 0.22);
 }
 
 .filter-search-popover {
@@ -1673,7 +1713,7 @@ a {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   padding: 6px 0 0;
 }
 
@@ -1716,6 +1756,11 @@ a {
   background: #f8f5f0;
 }
 
+.negative-card.active {
+  outline: 2px solid rgba(116, 23, 255, 0.22);
+  background: #f5efff;
+}
+
 .negative-card span {
   color: #2a2335;
   font-size: 14px;
@@ -1738,7 +1783,7 @@ a {
 }
 
 .reference-strip {
-  min-height: 66px;
+  min-height: 64px;
   border: 1px dashed #ded8e8;
   border-radius: 14px;
   display: grid;
@@ -1770,6 +1815,10 @@ a {
   height: 38px;
   border-radius: 12px;
   background: #f1f1f3;
+}
+
+.reference-strip input {
+  display: none;
 }
 
 .generate-prompt-box {
@@ -1804,7 +1853,7 @@ a {
 
 .generate-prompt-box textarea {
   flex: 1;
-  min-height: 180px;
+  min-height: 210px;
   border: 0;
   outline: 0;
   resize: none;
@@ -1840,6 +1889,7 @@ a {
 .generate-setting-row {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .generate-setting-row button {
@@ -1853,12 +1903,53 @@ a {
   font-weight: 850;
 }
 
+.generate-setting-row button.active {
+  border-color: #7f45ff;
+  color: #6d26f5;
+  background: #f4eeff;
+}
+
+.size-select {
+  position: relative;
+}
+
+.size-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 12;
+  width: 88px;
+  max-height: 236px;
+  overflow-y: auto;
+  border: 1px solid #e4e0ea;
+  border-radius: 10px;
+  padding: 6px;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(22, 16, 35, 0.18);
+}
+
+.size-menu button {
+  width: 100%;
+  height: 30px;
+  min-width: 0;
+  border: 0;
+  justify-content: flex-start;
+  padding: 0 9px;
+  background: transparent;
+}
+
+.size-menu button.active {
+  color: #6d26f5;
+  background: #f2eaff;
+}
+
 .quality-group {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   padding: 3px;
   border-radius: 999px;
   background: #faf8f5;
+  box-shadow: inset 0 0 0 1px rgba(40, 32, 54, 0.03);
 }
 
 .quality-group button {
@@ -1908,6 +1999,48 @@ a {
   background: #171717;
   font-size: 15px;
   font-weight: 950;
+}
+
+.coming-soon-card {
+  position: relative;
+  width: min(360px, calc(100vw - 40px));
+  border-radius: 18px;
+  padding: 34px 28px 30px;
+  text-align: center;
+  color: #25153d;
+  background: linear-gradient(180deg, #fff, #fbf7ff);
+  box-shadow: 0 30px 90px rgba(19, 12, 32, 0.34);
+}
+
+.coming-soon-card > button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  color: #776c87;
+  background: #f5f1fb;
+}
+
+.coming-soon-card > svg {
+  color: #7936ff;
+  filter: drop-shadow(0 8px 14px rgba(121, 54, 255, 0.22));
+}
+
+.coming-soon-card h2 {
+  margin: 14px 0 8px;
+  font-size: 24px;
+  font-weight: 950;
+}
+
+.coming-soon-card p {
+  margin: 0;
+  color: #6f6680;
+  line-height: 1.7;
+  font-size: 14px;
+  font-weight: 750;
 }
 
 .auth-card {
@@ -2365,6 +2498,18 @@ a {
   font-weight: 650;
 }
 
+.payment-coming {
+  width: fit-content;
+  margin: 18px auto 0;
+  border: 1px solid #e3d6ff;
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: #5d22dc;
+  background: linear-gradient(135deg, #fbf7ff, #eef7ff);
+  font-size: 14px;
+  font-weight: 900;
+}
+
 .redeem-panel {
   max-width: 920px;
   margin: 0 auto 26px;
@@ -2520,13 +2665,12 @@ a {
 }
 
 .pricing-icon {
-  width: 72px;
-  height: 72px;
+  width: 82px;
+  height: 82px;
   margin: 0 auto;
   display: block;
-  border-radius: 18px;
-  object-fit: cover;
-  box-shadow: 0 12px 26px rgba(92, 38, 207, 0.14);
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(92, 38, 207, 0.18));
 }
 
 .price-line {
@@ -2675,6 +2819,19 @@ a {
 .berserk-app[data-theme="dark"] .pricing-hero p,
 .berserk-app[data-theme="dark"] .pricing-proof p {
   color: var(--muted);
+}
+
+.berserk-app[data-theme="dark"] .credit-balance {
+  border-color: rgba(174, 122, 255, 0.3);
+  background: linear-gradient(135deg, #241b35, #1a1426);
+}
+
+.berserk-app[data-theme="dark"] .credit-balance span {
+  color: #b9a9d5;
+}
+
+.berserk-app[data-theme="dark"] .credit-balance strong {
+  color: #d9c4ff;
 }
 
 .berserk-app[data-theme="dark"] .pricing-hero h1,

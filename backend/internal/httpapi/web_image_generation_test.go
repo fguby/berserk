@@ -143,10 +143,10 @@ func (s *webImageTestStore) CreateGalleryImages(_ context.Context, userID string
 	}
 	return items, nil
 }
-func (s *webImageTestStore) ListGalleryImages(context.Context, string, int, string) ([]models.WebGalleryImage, error) {
+func (s *webImageTestStore) ListGalleryImages(context.Context, string, int, string, string) ([]models.WebGalleryImage, error) {
 	return nil, nil
 }
-func (s *webImageTestStore) ListFavoriteGalleryImages(context.Context, string, int, string) ([]models.WebGalleryImage, error) {
+func (s *webImageTestStore) ListFavoriteGalleryImages(context.Context, string, int, string, string) ([]models.WebGalleryImage, error) {
 	return nil, nil
 }
 func (s *webImageTestStore) SetGalleryImageLike(context.Context, string, string, bool) (models.WebGalleryImage, error) {

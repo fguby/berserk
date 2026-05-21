@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-05-21T03:10:37Z",
+  "items": [
+    {
+      "filename": "1.png",
+      "prompt": "帮我设计一张小说封面，书名是《大道朝天》，作者名是《猫腻》",
+      "ossURI": "oss://cc-berserk/berserk/generated/fengmian/1.png",
+      "mimeType": "image/png",
+      "imageID": "52174010-214f-444b-bc13-f772d2385104"
+    },
+    {
+      "filename": "2.png",
+      "prompt": "帮我设计一张起点网站的小说封面，书的类型是仙侠小说，书名是《剑道真仙》，作者名是《十剪纸》",
+      "ossURI": "oss://cc-berserk/berserk/generated/fengmian/2.png",
+      "mimeType": "image/png",
+      "imageID": "7fc05b77-1608-4168-8047-90c9385c6dd9"
+    }
+  ]
+}
