@@ -165,14 +165,10 @@ func (s *Server) routes() {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok", "service": "berserk"})
 	}
 	s.echo.GET("/healthz", health)
-	s.echo.GET("/pk/healthz", health)
 	s.echo.Static("/generated", s.generatedImageDir)
-	s.echo.Static("/pk/generated", s.generatedImageDir)
 
 	api := s.echo.Group("/api/v1")
 	s.registerAPIRoutes(api)
-	prefixedAPI := s.echo.Group("/pk/api/v1")
-	s.registerAPIRoutes(prefixedAPI)
 }
 
 func (s *Server) registerAPIRoutes(api *echo.Group) {

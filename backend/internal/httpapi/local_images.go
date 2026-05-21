@@ -165,12 +165,9 @@ func generatedImageFilename(mime string) (string, error) {
 func (s *Server) generatedImageURL(filename string) string {
 	base := strings.TrimRight(strings.TrimSpace(s.publicBaseURL), "/")
 	if base == "" {
-		return "/pk/generated/" + filename
+		return "/generated/" + filename
 	}
-	if strings.HasSuffix(base, "/pk") {
-		return base + "/generated/" + filename
-	}
-	return base + "/pk/generated/" + filename
+	return base + "/generated/" + filename
 }
 
 func (s *Server) ossConfigured() bool {

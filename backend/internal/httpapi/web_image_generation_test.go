@@ -66,7 +66,7 @@ func TestGenerateWebImage(t *testing.T) {
 	if len(response.Images) != 1 {
 		t.Fatalf("expected one image, got %d", len(response.Images))
 	}
-	if !strings.HasPrefix(response.Images[0].URL, "https://berserk.test/pk/generated/") {
+	if !strings.HasPrefix(response.Images[0].URL, "https://berserk.test/generated/") {
 		t.Fatalf("expected generated image URL, got %q", response.Images[0].URL)
 	}
 	if response.Credits != 5 || response.ModelID != "gpt-image" {

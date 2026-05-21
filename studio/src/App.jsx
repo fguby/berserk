@@ -33,7 +33,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://127.0.0.1:8080/pk';
+const API_BASE_URL = 'http://127.0.0.1:8080';
 const AUTH_APP_ID = 'berserk.web';
 const AUTH_STORAGE_KEY = 'berserk-ai-auth-session';
 const STYLE_FAVORITES_KEY = 'berserk-ai-style-favorites';

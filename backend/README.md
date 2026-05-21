@@ -13,7 +13,7 @@ XAI_API_KEY=your_xai_relay_key go run ./cmd/api
 The API listens on `http://127.0.0.1:8080` by default.
 
 Configuration is loaded from `config.yaml` by default. Set `CONFIG_PATH=/path/to/config.yaml` to use another file; environment variables such as `DATABASE_URL` and `PUBLIC_BASE_URL` still override the YAML values for deployment.
-The API is exposed at both `/api/v1/...` and `/pk/api/v1/...` so it can run directly or behind the deployed service prefix.
+The API is exposed directly at `/api/v1/...`; generated local images are served from `/generated/...`.
 
 ## XAI relay settings
 
