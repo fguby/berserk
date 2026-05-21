@@ -90,11 +90,20 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		)`,
 		`insert into credit_package_configs (package_id, name, credits, amount_cents, currency, icon, payment_url, enabled, sort_order)
 		values
+			('credits_trial', '限时体验包', 10, 100, 'CNY', '/pricing-icons/credits-100.png', '', true, 5),
 			('credits_100', '灵感入门包', 100, 1000, 'CNY', '/pricing-icons/credits-100.png', '', true, 10),
 			('credits_500', '创作加速包', 500, 4900, 'CNY', '/pricing-icons/credits-500.png', '', true, 20),
 			('credits_1000', '高频创作包', 1000, 9500, 'CNY', '/pricing-icons/credits-1000.png', '', true, 30),
-			('credits_5000', '工作室储备包', 5000, 45000, 'CNY', '/pricing-icons/credits-5000.png', '', true, 40)
-		on conflict (package_id) do nothing`,
+			('credits_5000', '工作室储备包', 5000, 45000, 'CNY', '/pricing-icons/credits-5000.png', '', false, 40)
+		on conflict (package_id) do update set
+			name = excluded.name,
+			credits = excluded.credits,
+			amount_cents = excluded.amount_cents,
+			currency = excluded.currency,
+			icon = excluded.icon,
+			enabled = excluded.enabled,
+			sort_order = excluded.sort_order,
+			updated_at = now()`,
 		`create table if not exists credit_redeem_codes (
 			code text primary key,
 			package_id text not null default '',

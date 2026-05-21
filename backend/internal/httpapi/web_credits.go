@@ -14,10 +14,10 @@ import (
 const webGenerationCreditCost = 5
 
 var creditPackages = []models.CreditPackage{
+	{ID: "credits_trial", Name: "限时体验包", Credits: 10, AmountCents: 100, Currency: "CNY", Icon: "/pricing-icons/credits-100.png"},
 	{ID: "credits_100", Name: "灵感入门包", Credits: 100, AmountCents: 1000, Currency: "CNY", Icon: "/pricing-icons/credits-100.png"},
 	{ID: "credits_500", Name: "创作加速包", Credits: 500, AmountCents: 4900, Currency: "CNY", Icon: "/pricing-icons/credits-500.png"},
 	{ID: "credits_1000", Name: "高频创作包", Credits: 1000, AmountCents: 9500, Currency: "CNY", Icon: "/pricing-icons/credits-1000.png"},
-	{ID: "credits_5000", Name: "工作室储备包", Credits: 5000, AmountCents: 45000, Currency: "CNY", Icon: "/pricing-icons/credits-5000.png"},
 }
 
 func (s *Server) listCreditPackages(c echo.Context) error {

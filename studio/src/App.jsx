@@ -124,6 +124,15 @@ const stylePresets = [
 
 const creditPackages = [
   {
+    id: 'credits_trial',
+    name: '限时体验包',
+    price: '¥1',
+    credits: '10 积分',
+    icon: '/pricing-icons/credits-100.png',
+    tone: 'blue',
+    features: ['限时体验专享', '可生成约 2 次基础模型图片', '适合测试出图流程', '购买后立即到账'],
+  },
+  {
     id: 'credits_100',
     name: '灵感入门包',
     price: '¥10',
@@ -150,15 +159,6 @@ const creditPackages = [
     icon: '/pricing-icons/credits-1000.png',
     tone: 'gold',
     features: ['适合高频出图', '可生成约 200 次图片', '批量探索不同风格', '购买后立即到账'],
-  },
-  {
-    id: 'credits_5000',
-    name: '工作室储备包',
-    price: '¥450',
-    credits: '5,000 积分',
-    icon: '/pricing-icons/credits-5000.png',
-    tone: 'purple',
-    features: ['适合长期项目储备', '可生成约 1,000 次图片', '团队/工作室创作更从容', '购买后立即到账'],
   },
 ];
 
