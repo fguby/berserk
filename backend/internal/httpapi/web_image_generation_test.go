@@ -41,7 +41,7 @@ func TestGenerateWebImage(t *testing.T) {
 	defer upstream.Close()
 
 	server := NewServer(ServerConfig{
-		PublicBaseURL:     "https://berserk.test",
+		PublicBaseURL:     "https://berserk.test/berserk",
 		XAIAPIKey:         "test-key",
 		XAIBaseURL:        upstream.URL,
 		GeneratedImageDir: t.TempDir(),
@@ -49,7 +49,7 @@ func TestGenerateWebImage(t *testing.T) {
 	})
 
 	body := `{"prompt":"雨夜街头","style":"赛博朋克","n":1,"size":"1024x1365","quality":"medium","modelID":"gpt-image"}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/images/generate", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/berserk/api/v1/images/generate", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer test-session")
 	rec := httptest.NewRecorder()
@@ -66,7 +66,7 @@ func TestGenerateWebImage(t *testing.T) {
 	if len(response.Images) != 1 {
 		t.Fatalf("expected one image, got %d", len(response.Images))
 	}
-	if !strings.HasPrefix(response.Images[0].URL, "https://berserk.test/generated/") {
+	if !strings.HasPrefix(response.Images[0].URL, "https://berserk.test/berserk/generated/") {
 		t.Fatalf("expected generated image URL, got %q", response.Images[0].URL)
 	}
 	if response.Credits != 5 || response.ModelID != "gpt-image" {

@@ -33,7 +33,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://127.0.0.1:8080';
+const API_BASE_URL = 'http://127.0.0.1:8080/berserk';
 const AUTH_APP_ID = 'berserk.web';
 const AUTH_STORAGE_KEY = 'berserk-ai-auth-session';
 const STYLE_FAVORITES_KEY = 'berserk-ai-style-favorites';
@@ -1046,7 +1046,13 @@ function MasonryFeed({ items, loading, loadingMore, hasMore, onLoadMore, onOpen,
 
 function MasonryImage({ item }) {
   const [loaded, setLoaded] = useState(false);
-  const ratio = `${item.width || 1024} / ${item.height || 1360}`;
+  const fallbackRatio = `${item.width || 1024} / ${item.height || 1360}`;
+  const [ratio, setRatio] = useState(fallbackRatio);
+
+  useEffect(() => {
+    setLoaded(false);
+    setRatio(fallbackRatio);
+  }, [fallbackRatio, item.id, item.src]);
 
   return (
     <span className={`masonry-media${loaded ? ' loaded' : ''}`} style={{ aspectRatio: ratio }}>
@@ -1056,7 +1062,13 @@ function MasonryImage({ item }) {
         alt={`${item.author || 'Berserk AI'} 的作品`}
         loading="lazy"
         decoding="async"
-        onLoad={() => setLoaded(true)}
+        onLoad={(event) => {
+          const { naturalWidth, naturalHeight } = event.currentTarget;
+          if (naturalWidth > 0 && naturalHeight > 0) {
+            setRatio(`${naturalWidth} / ${naturalHeight}`);
+          }
+          setLoaded(true);
+        }}
       />
     </span>
   );

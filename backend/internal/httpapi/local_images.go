@@ -19,7 +19,10 @@ import (
 	"pianke-ticket/backend/internal/models"
 
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
-	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss/credentials"
+	osscredentials "github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss/credentials"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 const maxGeneratedImageBytes = 16 << 20
@@ -61,6 +64,17 @@ func (s *Server) persistGeneratedImage(ctx context.Context, image string) (model
 	filename, err := generatedImageFilename(mime)
 	if err != nil {
 		return models.WebGeneratedImage{}, err
+	}
+
+	if s.r2Configured() {
+		objectKey := s.r2ObjectKey(filename)
+		if err := s.uploadGeneratedImageToR2(ctx, objectKey, data, mime); err != nil {
+			return models.WebGeneratedImage{}, err
+		}
+		return models.WebGeneratedImage{
+			URL:      r2StorageURI(s.r2Bucket, objectKey),
+			MimeType: mime,
+		}, nil
 	}
 
 	if s.ossConfigured() {
@@ -165,9 +179,73 @@ func generatedImageFilename(mime string) (string, error) {
 func (s *Server) generatedImageURL(filename string) string {
 	base := strings.TrimRight(strings.TrimSpace(s.publicBaseURL), "/")
 	if base == "" {
-		return "/generated/" + filename
+		return "/berserk/generated/" + filename
 	}
 	return base + "/generated/" + filename
+}
+
+func (s *Server) r2Configured() bool {
+	return strings.TrimSpace(s.r2Bucket) != "" &&
+		strings.TrimSpace(s.r2Endpoint) != "" &&
+		strings.TrimSpace(s.r2AccessKeyID) != "" &&
+		strings.TrimSpace(s.r2AccessKeySecret) != ""
+}
+
+func (s *Server) uploadGeneratedImageToR2(ctx context.Context, objectKey string, data []byte, mime string) error {
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+
+	contentLength := int64(len(data))
+	_, err := s.r2Client().PutObject(ctx, &s3.PutObjectInput{
+		Bucket:        aws.String(s.r2Bucket),
+		Key:           aws.String(objectKey),
+		Body:          bytes.NewReader(data),
+		ContentLength: &contentLength,
+		ContentType:   aws.String(mime),
+		CacheControl:  aws.String("public, max-age=31536000, immutable"),
+	})
+	return err
+}
+
+func (s *Server) r2ObjectKey(filename string) string {
+	prefix := strings.Trim(strings.TrimSpace(s.r2ObjectPrefix), "/")
+	if prefix == "" {
+		return filename
+	}
+	return prefix + "/" + filename
+}
+
+func (s *Server) r2Client() *s3.Client {
+	return s3.New(s3.Options{
+		Region:       "auto",
+		BaseEndpoint: aws.String(s.r2Endpoint),
+		Credentials: aws.NewCredentialsCache(
+			awscredentials.NewStaticCredentialsProvider(s.r2AccessKeyID, s.r2AccessKeySecret, ""),
+		),
+	})
+}
+
+func (s *Server) signedR2ObjectURL(ctx context.Context, bucket string, objectKey string) (string, error) {
+	if !s.r2Configured() {
+		return "", errors.New("r2 is not configured")
+	}
+	bucket = firstNonEmpty(strings.TrimSpace(bucket), s.r2Bucket)
+	objectKey = strings.TrimLeft(strings.TrimSpace(objectKey), "/")
+	if bucket == "" || objectKey == "" {
+		return "", errors.New("invalid r2 object")
+	}
+	if s.r2PublicBaseURL != "" {
+		return s.r2PublicBaseURL + "/" + pathEscapedObjectKey(objectKey), nil
+	}
+	presigner := s3.NewPresignClient(s.r2Client())
+	result, err := presigner.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(objectKey),
+	}, s3.WithPresignExpires(s.r2SignedURLTTL))
+	if err != nil {
+		return "", err
+	}
+	return result.URL, nil
 }
 
 func (s *Server) ossConfigured() bool {
@@ -206,7 +284,7 @@ func (s *Server) ossObjectKey(filename string) string {
 
 func (s *Server) ossClient() *oss.Client {
 	cfg := oss.LoadDefaultConfig().
-		WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s.ossAccessKeyID, s.ossAccessKeySecret, s.ossSecurityToken)).
+		WithCredentialsProvider(osscredentials.NewStaticCredentialsProvider(s.ossAccessKeyID, s.ossAccessKeySecret, s.ossSecurityToken)).
 		WithRegion(normalizeOSSRegion(s.ossRegion)).
 		WithEndpoint(s.ossEndpoint)
 	return oss.NewClient(cfg)
@@ -251,6 +329,17 @@ func normalizeOSSRegion(value string) string {
 	return value
 }
 
+func normalizeR2Endpoint(value string) string {
+	value = strings.TrimRight(strings.TrimSpace(value), "/")
+	if value == "" {
+		return ""
+	}
+	if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
+		return value
+	}
+	return "https://" + value
+}
+
 func ossStorageURI(bucket string, objectKey string) string {
 	return (&url.URL{
 		Scheme: "oss",
@@ -269,4 +358,32 @@ func parseOSSStorageURI(value string) (string, string, bool) {
 		return "", "", false
 	}
 	return parsed.Host, key, true
+}
+
+func r2StorageURI(bucket string, objectKey string) string {
+	return (&url.URL{
+		Scheme: "r2",
+		Host:   strings.TrimSpace(bucket),
+		Path:   "/" + strings.TrimLeft(strings.TrimSpace(objectKey), "/"),
+	}).String()
+}
+
+func parseR2StorageURI(value string) (string, string, bool) {
+	parsed, err := url.Parse(strings.TrimSpace(value))
+	if err != nil || parsed.Scheme != "r2" || parsed.Host == "" {
+		return "", "", false
+	}
+	key := strings.TrimLeft(parsed.Path, "/")
+	if key == "" {
+		return "", "", false
+	}
+	return parsed.Host, key, true
+}
+
+func pathEscapedObjectKey(objectKey string) string {
+	segments := strings.Split(strings.TrimLeft(objectKey, "/"), "/")
+	for i, segment := range segments {
+		segments[i] = url.PathEscape(segment)
+	}
+	return strings.Join(segments, "/")
 }

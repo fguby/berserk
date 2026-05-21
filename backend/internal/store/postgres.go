@@ -535,7 +535,10 @@ func (p *Postgres) listGalleryImages(ctx context.Context, userID string, limit i
 		cursorFilter = `and exists (
 			select 1 from web_gallery_images cursor_image
 			where cursor_image.id::text = $2
-			  and (g.is_featured, g.created_at, g.id) < (cursor_image.is_featured, cursor_image.created_at, cursor_image.id)
+			  and (
+			    (g.is_featured = cursor_image.is_featured and (g.created_at, g.id) < (cursor_image.created_at, cursor_image.id))
+			    or (cursor_image.is_featured = true and g.is_featured = false)
+			  )
 		)`
 	}
 	favoriteFilter := ""

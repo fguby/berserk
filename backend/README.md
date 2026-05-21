@@ -13,7 +13,7 @@ XAI_API_KEY=your_xai_relay_key go run ./cmd/api
 The API listens on `http://127.0.0.1:8080` by default.
 
 Configuration is loaded from `config.yaml` by default. Set `CONFIG_PATH=/path/to/config.yaml` to use another file; environment variables such as `DATABASE_URL` and `PUBLIC_BASE_URL` still override the YAML values for deployment.
-The API is exposed directly at `/api/v1/...`; generated local images are served from `/generated/...`.
+The API is exposed under `/berserk/api/v1/...`; generated local images are served from `/berserk/generated/...`.
 
 ## XAI relay settings
 
@@ -22,6 +22,17 @@ The API is exposed directly at `/api/v1/...`; generated local images are served 
 - `XAI_RESPONSES_PATH`: Responses path, defaults to `/responses`.
 - `XAI_MAIN_MODEL`: orchestration model, defaults to `gpt-5.5`.
 - `XAI_IMAGE_MODEL`: image tool model, defaults to `gpt-image-2`.
+
+## Image storage settings
+
+New generated images are uploaded to Cloudflare R2 when all `R2_*` settings are present. Existing `oss://...` records continue to be readable through the old OSS signing path.
+
+- `R2_BUCKET`: R2 bucket name.
+- `R2_ENDPOINT`: S3-compatible endpoint, usually `https://<account_id>.r2.cloudflarestorage.com`.
+- `R2_ACCESS_KEY_ID`, `R2_ACCESS_KEY_SECRET`: R2 API token credentials.
+- `R2_PUBLIC_BASE_URL`: optional public/custom domain. Leave empty to return short-lived signed URLs.
+- `R2_OBJECT_PREFIX`: object prefix, defaults to `berserk/generated`.
+- `R2_SIGNED_URL_TTL_SECONDS`: signed URL lifetime, defaults to `3600`.
 
 ## Aliyun LLM settings
 
@@ -41,44 +52,44 @@ Studio story analysis uses Alibaba Cloud DashScope OpenAI-compatible chat comple
 
 ## Endpoints
 
-- `GET /healthz`
-- `GET /api/v1/images/gallery`
-- `POST /api/v1/images/generate`
-- `POST /api/v1/web/images/generate`
-- `GET /api/v1/credits/packages`
-- `POST /api/v1/credits/purchase`
-- `POST /api/v1/auth/email/code`
-- `POST /api/v1/auth/email/verify`
-- `POST /api/v1/auth/email/register`
-- `POST /api/v1/auth/email/login`
-- `POST /api/v1/auth/email/reset`
-- `POST /api/v1/auth/apple`
-- `GET /api/v1/me`
-- `POST /api/v1/subscriptions`
-- `POST /api/v1/subscriptions/restore`
-- `GET /api/v1/templates`
-- `GET /api/v1/copywriting?category=travel`
-- `GET /api/v1/tickets`
-- `POST /api/v1/tickets`
-- `GET /api/v1/tickets/:id`
-- `DELETE /api/v1/tickets/:id`
-- `POST /api/v1/memories`
-- `GET /api/v1/memories/:id`
-- `POST /api/v1/feedback`
-- `POST /api/v1/manga/generate`
-- `POST /api/v1/manga/script`
-- `POST /api/v1/studio/story/analyze`
-- `GET /api/v1/studio/projects`
-- `POST /api/v1/studio/projects`
-- `GET /api/v1/studio/projects/:id`
-- `GET /api/v1/studio/assets`
-- `PATCH /api/v1/studio/assets/:id`
-- `POST /api/v1/studio/assets/:id/generate`
+- `GET /berserk/healthz`
+- `GET /berserk/api/v1/images/gallery`
+- `POST /berserk/api/v1/images/generate`
+- `POST /berserk/api/v1/web/images/generate`
+- `GET /berserk/api/v1/credits/packages`
+- `POST /berserk/api/v1/credits/purchase`
+- `POST /berserk/api/v1/auth/email/code`
+- `POST /berserk/api/v1/auth/email/verify`
+- `POST /berserk/api/v1/auth/email/register`
+- `POST /berserk/api/v1/auth/email/login`
+- `POST /berserk/api/v1/auth/email/reset`
+- `POST /berserk/api/v1/auth/apple`
+- `GET /berserk/api/v1/me`
+- `POST /berserk/api/v1/subscriptions`
+- `POST /berserk/api/v1/subscriptions/restore`
+- `GET /berserk/api/v1/templates`
+- `GET /berserk/api/v1/copywriting?category=travel`
+- `GET /berserk/api/v1/tickets`
+- `POST /berserk/api/v1/tickets`
+- `GET /berserk/api/v1/tickets/:id`
+- `DELETE /berserk/api/v1/tickets/:id`
+- `POST /berserk/api/v1/memories`
+- `GET /berserk/api/v1/memories/:id`
+- `POST /berserk/api/v1/feedback`
+- `POST /berserk/api/v1/manga/generate`
+- `POST /berserk/api/v1/manga/script`
+- `POST /berserk/api/v1/studio/story/analyze`
+- `GET /berserk/api/v1/studio/projects`
+- `POST /berserk/api/v1/studio/projects`
+- `GET /berserk/api/v1/studio/projects/:id`
+- `GET /berserk/api/v1/studio/assets`
+- `PATCH /berserk/api/v1/studio/assets/:id`
+- `POST /berserk/api/v1/studio/assets/:id/generate`
 - `GET /m/:id`
 
 ### Web image generation
 
-`POST /api/v1/images/generate` requires `Authorization: Bearer <token>` and consumes 5 credits for each request. Generated images are saved to the web gallery with their prompt, style, image data, size, quality, and credit cost.
+`POST /berserk/api/v1/images/generate` requires `Authorization: Bearer <token>` and consumes 5 credits for each request. Generated images are saved to the web gallery with their prompt, style, image data, size, quality, and credit cost.
 
 Request:
 
@@ -118,16 +129,16 @@ Response images are returned as browser-ready data URLs:
 Load the waterfall gallery:
 
 ```http
-GET /api/v1/images/gallery?limit=30
+GET /berserk/api/v1/images/gallery?limit=30
 ```
 
 The response is `{ "items": [...] }`; each item contains `id`, `image`, `prompt`, `style`, `tag`, `ratio`, `size`, `quality`, and `createdAt`.
 
 ### AI Manga Studio
 
-`GET /api/v1/studio/projects` returns the user's works. `POST /api/v1/studio/projects` creates a new work, and `GET /api/v1/studio/projects/:id` returns the work plus its saved assets.
+`GET /berserk/api/v1/studio/projects` returns the user's works. `POST /berserk/api/v1/studio/projects` creates a new work, and `GET /berserk/api/v1/studio/projects/:id` returns the work plus its saved assets.
 
-`POST /api/v1/studio/story/analyze` requires `Authorization: Bearer <token>`. It sends the story to the configured Aliyun text model, saves one analysis row, and creates draft assets for characters, scenes, props, and dialogue rules. Pass `analysisID` to update an existing work.
+`POST /berserk/api/v1/studio/story/analyze` requires `Authorization: Bearer <token>`. It sends the story to the configured Aliyun text model, saves one analysis row, and creates draft assets for characters, scenes, props, and dialogue rules. Pass `analysisID` to update an existing work.
 
 ```json
 {
@@ -138,7 +149,7 @@ The response is `{ "items": [...] }`; each item contains `id`, `image`, `prompt`
 }
 ```
 
-`GET /api/v1/studio/assets?type=character` returns saved assets. `PATCH /api/v1/studio/assets/:id` updates editable fields such as `prompt`. `POST /api/v1/studio/assets/:id/generate` consumes 5 credits, generates a reference image through the existing image service, and writes the image back to the asset library.
+`GET /berserk/api/v1/studio/assets?type=character` returns saved assets. `PATCH /berserk/api/v1/studio/assets/:id` updates editable fields such as `prompt`. `POST /berserk/api/v1/studio/assets/:id/generate` consumes 5 credits, generates a reference image through the existing image service, and writes the image back to the asset library.
 
 ### Credits
 
@@ -149,7 +160,7 @@ Credit packages:
 - `credits_1000`: 1000 credits, 95 RMB
 - `credits_5000`: 5000 credits, 450 RMB
 
-`GET /api/v1/credits/packages` returns these packages. `POST /api/v1/credits/purchase` requires `Authorization: Bearer <token>` and currently treats payment as successful by default, creates a paid mock order, writes a credit ledger entry, and returns the refreshed user balance.
+`GET /berserk/api/v1/credits/packages` returns these packages. `POST /berserk/api/v1/credits/purchase` requires `Authorization: Bearer <token>` and currently treats payment as successful by default, creates a paid mock order, writes a credit ledger entry, and returns the refreshed user balance.
 
 The database design uses:
 
@@ -199,4 +210,4 @@ Log in with password:
 }
 ```
 
-`POST /api/v1/auth/email/reset` consumes a verified reset setup token, updates the password, and returns a fresh session. All email auth responses share the Apple auth shape: `{ "token": "...", "user": { ... } }`.
+`POST /berserk/api/v1/auth/email/reset` consumes a verified reset setup token, updates the password, and returns a fresh session. All email auth responses share the Apple auth shape: `{ "token": "...", "user": { ... } }`.

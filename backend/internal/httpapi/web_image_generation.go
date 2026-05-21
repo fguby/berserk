@@ -484,6 +484,14 @@ func (s *Server) signGeneratedImages(ctx context.Context, images []models.WebGen
 			next.URL = url
 			next.ThumbnailURL = thumbnailURL
 		}
+		if bucket, key, ok := parseR2StorageURI(image.URL); ok {
+			url, err := s.signedR2ObjectURL(ctx, bucket, key)
+			if err != nil {
+				return nil, err
+			}
+			next.URL = url
+			next.ThumbnailURL = firstNonEmpty(next.ThumbnailURL, url)
+		}
 		signed = append(signed, next)
 	}
 	return signed, nil
@@ -514,8 +522,23 @@ func (s *Server) signGalleryImage(ctx context.Context, item models.WebGalleryIma
 		item.Image = url
 		item.ThumbnailURL = thumbnailURL
 	}
+	if bucket, key, ok := parseR2StorageURI(item.Image); ok {
+		url, err := s.signedR2ObjectURL(ctx, bucket, key)
+		if err != nil {
+			return item, err
+		}
+		item.Image = url
+		item.ThumbnailURL = firstNonEmpty(item.ThumbnailURL, url)
+	}
 	if bucket, key, ok := parseOSSStorageURI(item.AuthorAvatarURL); ok {
 		url, err := s.signedOSSObjectURL(ctx, bucket, key, "")
+		if err != nil {
+			return item, err
+		}
+		item.AuthorAvatarURL = url
+	}
+	if bucket, key, ok := parseR2StorageURI(item.AuthorAvatarURL); ok {
+		url, err := s.signedR2ObjectURL(ctx, bucket, key)
 		if err != nil {
 			return item, err
 		}
@@ -527,6 +550,13 @@ func (s *Server) signGalleryImage(ctx context.Context, item models.WebGalleryIma
 func (s *Server) signWebImageTask(ctx context.Context, task models.WebImageTask) (models.WebImageTask, error) {
 	if bucket, key, ok := parseOSSStorageURI(task.ResultImage); ok {
 		url, err := s.signedOSSObjectURL(ctx, bucket, key, "")
+		if err != nil {
+			return task, err
+		}
+		task.ResultImage = url
+	}
+	if bucket, key, ok := parseR2StorageURI(task.ResultImage); ok {
+		url, err := s.signedR2ObjectURL(ctx, bucket, key)
 		if err != nil {
 			return task, err
 		}
