@@ -107,7 +107,9 @@ type CreditPurchaseResponse struct {
 }
 
 type CreditRedeemRequest struct {
-	Code string `json:"code"`
+	Code     string `json:"code,omitempty"`
+	CardNo   string `json:"cardNo,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type CreditRedeemResponse struct {

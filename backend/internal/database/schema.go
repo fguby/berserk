@@ -108,11 +108,13 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			code text primary key,
 			package_id text not null default '',
 			credits integer not null,
+			password_hash text not null default '',
 			status text not null default 'unused',
 			redeemed_by uuid references users(id) on delete set null,
 			redeemed_at timestamptz,
 			created_at timestamptz not null default now()
 		)`,
+		`alter table credit_redeem_codes add column if not exists password_hash text not null default ''`,
 		`create table if not exists image_models (
 			id text primary key,
 			name text not null,

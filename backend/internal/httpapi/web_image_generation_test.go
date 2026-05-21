@@ -127,7 +127,7 @@ func (s *webImageTestStore) CreateCreditOrder(context.Context, string, models.Cr
 func (s *webImageTestStore) ListCreditPackages(context.Context) ([]models.CreditPackage, error) {
 	return nil, nil
 }
-func (s *webImageTestStore) RedeemCreditCode(context.Context, string, string) (int, error) {
+func (s *webImageTestStore) RedeemCreditCode(context.Context, string, string, string) (int, error) {
 	return 0, store.ErrNotFound
 }
 func (s *webImageTestStore) ListImageModels(context.Context) ([]models.ImageModel, error) {

@@ -94,9 +94,10 @@ func (s *Server) redeemCreditCode(c echo.Context) error {
 	if err := c.Bind(&request); err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "invalid redeem payload"})
 	}
-	credits, err := s.store.RedeemCreditCode(c.Request().Context(), user.ID, request.Code)
+	cardNo := firstNonEmpty(strings.TrimSpace(request.CardNo), strings.TrimSpace(request.Code))
+	credits, err := s.store.RedeemCreditCode(c.Request().Context(), user.ID, cardNo, request.Password)
 	if errors.Is(err, store.ErrNotFound) {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "卡密无效或已被兑换"})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "卡号或密码错误，或卡密已被兑换"})
 	}
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "兑换失败"})

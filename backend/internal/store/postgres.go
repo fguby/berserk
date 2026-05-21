@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"errors"
@@ -38,7 +39,7 @@ type BerserkStore interface {
 	ConsumeCredits(ctx context.Context, userID string, amount int, reason string, refType string, refID string) (int, error)
 	CreateCreditOrder(ctx context.Context, userID string, pkg models.CreditPackage) (models.CreditOrder, error)
 	ListCreditPackages(ctx context.Context) ([]models.CreditPackage, error)
-	RedeemCreditCode(ctx context.Context, userID string, code string) (int, error)
+	RedeemCreditCode(ctx context.Context, userID string, cardNo string, password string) (int, error)
 	ListImageModels(ctx context.Context) ([]models.ImageModel, error)
 	GetImageModel(ctx context.Context, modelID string) (models.ImageModel, error)
 	CreateGalleryImages(ctx context.Context, userID string, prompt string, style string, modelID string, modelName string, size string, quality string, creditsCost int, images []models.WebGeneratedImage) ([]models.WebGalleryImage, error)
@@ -389,11 +390,13 @@ func (p *Postgres) ListCreditPackages(ctx context.Context) ([]models.CreditPacka
 	return items, rows.Err()
 }
 
-func (p *Postgres) RedeemCreditCode(ctx context.Context, userID string, code string) (int, error) {
-	code = strings.TrimSpace(code)
-	if code == "" {
+func (p *Postgres) RedeemCreditCode(ctx context.Context, userID string, cardNo string, password string) (int, error) {
+	cardNo = strings.TrimSpace(cardNo)
+	password = strings.TrimSpace(password)
+	if cardNo == "" || password == "" {
 		return 0, ErrNotFound
 	}
+	passwordHash := creditRedeemPasswordHash(cardNo, password)
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
 		return 0, err
@@ -403,9 +406,9 @@ func (p *Postgres) RedeemCreditCode(ctx context.Context, userID string, code str
 	err = tx.QueryRow(ctx, `
 		update credit_redeem_codes
 		set status = 'redeemed', redeemed_by = $2::uuid, redeemed_at = now()
-		where lower(code) = lower($1) and status = 'unused'
+		where lower(code) = lower($1) and password_hash = $3 and status = 'unused'
 		returning credits
-	`, code, userID).Scan(&credits)
+	`, cardNo, userID, passwordHash).Scan(&credits)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, ErrNotFound
 	}
@@ -427,10 +430,15 @@ func (p *Postgres) RedeemCreditCode(ctx context.Context, userID string, code str
 	if _, err := tx.Exec(ctx, `
 		insert into credit_ledger (user_id, delta, balance_after, reason, ref_type, ref_id)
 		values ($1::uuid, $2, $3, 'redeem_code', 'credit_redeem_code', $4)
-	`, userID, credits, balance, code); err != nil {
+	`, userID, credits, balance, cardNo); err != nil {
 		return 0, err
 	}
 	return credits, tx.Commit(ctx)
+}
+
+func creditRedeemPasswordHash(cardNo string, password string) string {
+	sum := sha256.Sum256([]byte(strings.ToUpper(strings.TrimSpace(cardNo)) + "|" + strings.TrimSpace(password)))
+	return hex.EncodeToString(sum[:])
 }
 
 func (p *Postgres) ListImageModels(ctx context.Context) ([]models.ImageModel, error) {

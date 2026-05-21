@@ -1262,7 +1262,8 @@ function AuthModal({ onClose, onSuccess }) {
 }
 
 function PricingPage({ packages, authSession, onAuthOpen, onUserChange, onBack }) {
-  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemCardNo, setRedeemCardNo] = useState('');
+  const [redeemPassword, setRedeemPassword] = useState('');
   const [redeemMessage, setRedeemMessage] = useState('');
   const [busyPackage, setBusyPackage] = useState('');
 
@@ -1293,9 +1294,10 @@ function PricingPage({ packages, authSession, onAuthOpen, onUserChange, onBack }
     }
     setRedeemMessage('');
     try {
-      const payload = await authPostJSON('/api/v1/credits/redeem', authSession.token, { code: redeemCode.trim() }, '卡密兑换失败');
+      const payload = await authPostJSON('/api/v1/credits/redeem', authSession.token, { cardNo: redeemCardNo.trim(), password: redeemPassword.trim() }, '卡密兑换失败');
       if (payload?.user) onUserChange(payload.user);
-      setRedeemCode('');
+      setRedeemCardNo('');
+      setRedeemPassword('');
       setRedeemMessage(`兑换成功，已到账 ${payload?.credits || 0} 积分。`);
     } catch (error) {
       setRedeemMessage(getErrorMessage(error, '兑换失败'));
@@ -1324,9 +1326,10 @@ function PricingPage({ packages, authSession, onAuthOpen, onUserChange, onBack }
       <form className="redeem-panel" onSubmit={handleRedeem}>
         <div>
           <strong>卡密兑换</strong>
-          <span>支付后获得卡密，在这里兑换到当前账号。</span>
+          <span>输入卡号和密码，在这里兑换到当前账号。</span>
         </div>
-        <input value={redeemCode} onChange={(event) => setRedeemCode(event.target.value)} placeholder="输入你的积分卡密" />
+        <input value={redeemCardNo} onChange={(event) => setRedeemCardNo(event.target.value)} placeholder="卡号" />
+        <input value={redeemPassword} onChange={(event) => setRedeemPassword(event.target.value)} placeholder="密码" />
         <button type="submit">兑换积分</button>
       </form>
       {redeemMessage ? <p className="redeem-message">{redeemMessage}</p> : null}
