@@ -374,8 +374,8 @@ a {
   padding: 0 5px;
   align-self: flex-start;
   color: #fff;
-  background: linear-gradient(135deg, #ff476a, #f02055);
-  box-shadow: 0 5px 12px rgba(240, 32, 85, 0.32);
+  background: #f13a5c;
+  box-shadow: none;
   font-size: 10px;
   font-style: normal;
   font-weight: 900;
@@ -1695,11 +1695,12 @@ a {
 }
 
 .history-task p {
-  overflow: hidden;
   margin: 9px 0 0;
   color: #6f6680;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.65;
   font-size: 14px;
   font-weight: 760;
 }
@@ -2502,7 +2503,7 @@ a {
 
 .size-editor {
   position: relative;
-  width: min(980px, calc(100vw - 42px));
+  width: min(1120px, calc(100vw - 42px));
   border: 1px solid rgba(131, 72, 255, 0.22);
   border-radius: 26px;
   padding: 26px;
@@ -2546,11 +2547,12 @@ a {
 
 .size-editor-body {
   display: grid;
-  grid-template-columns: 270px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 26px;
 }
 
 .size-editor aside {
+  min-width: 0;
   display: grid;
   align-content: start;
   gap: 14px;
@@ -2589,6 +2591,7 @@ a {
   justify-content: space-between;
   gap: 10px;
   padding: 0 12px;
+  overflow: hidden;
   color: #332a45;
   background: #fff;
   font-weight: 900;
@@ -2601,6 +2604,7 @@ a {
 }
 
 .size-presets small {
+  flex: 0 0 auto;
   color: #80758f;
   font-size: 11px;
   font-weight: 850;
@@ -2654,6 +2658,7 @@ a {
 }
 
 .size-crop-area {
+  min-width: 0;
   min-height: 570px;
   border: 1px solid #eadff8;
   border-radius: 22px;

@@ -675,12 +675,15 @@ func (p *Postgres) ListWebImageTasks(ctx context.Context, userID string, limit i
 		limit = 60
 	}
 	rows, err := p.pool.Query(ctx, `
-		select id::text, user_id::text, prompt, style, coalesce(model_id, ''), coalesce(model_name, ''), size, quality, n, credits_cost,
-			status, error_message, result_image_data, result_mime_type,
-			coalesce(gallery_image_id::text, ''), is_public, created_at, started_at, completed_at, updated_at
-		from web_image_tasks
-		where user_id = $1::uuid
-		order by created_at desc
+		select t.id::text, t.user_id::text, t.prompt, t.style, coalesce(t.model_id, ''), coalesce(t.model_name, ''), t.size, t.quality, t.n, t.credits_cost,
+			t.status, t.error_message,
+			coalesce(nullif(t.result_image_data, ''), g.image_data, ''),
+			coalesce(nullif(t.result_mime_type, ''), g.mime_type, ''),
+			coalesce(t.gallery_image_id::text, ''), t.is_public, t.created_at, t.started_at, t.completed_at, t.updated_at
+		from web_image_tasks t
+		left join web_gallery_images g on g.id = t.gallery_image_id
+		where t.user_id = $1::uuid
+		order by t.created_at desc
 		limit $2
 	`, userID, limit)
 	if err != nil {
@@ -729,8 +732,8 @@ func (p *Postgres) CompleteWebImageTask(ctx context.Context, userID string, id s
 		update web_image_tasks
 		set status = 'succeeded',
 			error_message = '',
-			result_image_data = case when nullif($5, '') is null then $3 else '' end,
-			result_mime_type = case when nullif($5, '') is null then $4 else '' end,
+			result_image_data = $3,
+			result_mime_type = $4,
 			gallery_image_id = nullif($5, '')::uuid,
 			completed_at = now(),
 			updated_at = now()
