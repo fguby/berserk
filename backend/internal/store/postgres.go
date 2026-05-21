@@ -532,7 +532,11 @@ func (p *Postgres) listGalleryImages(ctx context.Context, userID string, limit i
 	if strings.TrimSpace(before) != "" {
 		args = []any{limit, strings.TrimSpace(before), strings.TrimSpace(userID)}
 		userParam = "$3"
-		cursorFilter = "and g.created_at < coalesce((select created_at from web_gallery_images where id::text = $2 limit 1), 'infinity'::timestamptz)"
+		cursorFilter = `and exists (
+			select 1 from web_gallery_images cursor_image
+			where cursor_image.id::text = $2
+			  and (g.is_featured, g.created_at, g.id) < (cursor_image.is_featured, cursor_image.created_at, cursor_image.id)
+		)`
 	}
 	favoriteFilter := ""
 	if favoritesOnly {
@@ -573,7 +577,7 @@ func (p *Postgres) listGalleryImages(ctx context.Context, userID string, limit i
 			group by image_id
 		) favorite_counts on favorite_counts.image_id = g.id
 		where g.is_public = true `+cursorFilter+` `+favoriteFilter+` `+searchFilter+`
-		order by g.is_featured desc, g.created_at desc
+		order by g.is_featured desc, g.created_at desc, g.id desc
 		limit $1
 	`, args...)
 	if err != nil {

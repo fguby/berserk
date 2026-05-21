@@ -199,14 +199,15 @@ function tagsFromImages(items) {
 function normalizeGalleryItem(item) {
   const prompt = item.prompt || '';
   const style = item.style || item.tag || '作品';
+  const [width, height] = parseImageSize(item.size, item.ratio);
   return {
     id: item.id,
     title: style,
     promptZh: prompt,
     src: item.thumbnailURL || item.image,
     fullSrc: item.image,
-    width: 1024,
-    height: item.ratio === 'landscape' ? 768 : item.ratio === 'square' ? 1024 : 1365,
+    width,
+    height,
     author: item.author || 'Berserk AI',
     authorAvatarURL: item.authorAvatarURL || '/assets/berserk-ai-icon.png',
     likes: item.likeCount || 0,
@@ -221,6 +222,29 @@ function normalizeGalleryItem(item) {
     isPromptFeatured: Boolean(item.isPromptFeatured),
     createdAt: item.createdAt,
   };
+}
+
+function mergeGalleryItems(current, incoming) {
+  const seen = new Set();
+  const merged = [];
+  [...current, ...incoming].forEach((item) => {
+    if (!item?.id || seen.has(item.id)) return;
+    seen.add(item.id);
+    merged.push(item);
+  });
+  return merged;
+}
+
+function parseImageSize(size, ratio) {
+  const match = String(size || '').match(/(\d+)\s*x\s*(\d+)/i);
+  if (match) {
+    const width = Number(match[1]);
+    const height = Number(match[2]);
+    if (width > 0 && height > 0) return [width, height];
+  }
+  if (ratio === 'landscape') return [1360, 1024];
+  if (ratio === 'square') return [1024, 1024];
+  return [1024, 1360];
 }
 
 function modelIconFor(model) {
@@ -241,6 +265,8 @@ function App() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [feedItems, setFeedItems] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
+  const [feedLoadingMore, setFeedLoadingMore] = useState(false);
+  const [feedHasMore, setFeedHasMore] = useState(false);
   const [feedError, setFeedError] = useState('');
   const [galleryQuery, setGalleryQuery] = useState('');
   const [imageModels, setImageModels] = useState(defaultImageModels);
@@ -251,6 +277,7 @@ function App() {
   const [taskNotice, setTaskNotice] = useState('');
   const [appModal, setAppModal] = useState(null);
   const [galleryRefreshKey, setGalleryRefreshKey] = useState(0);
+  const feedRequestRef = useRef(0);
   const previousActiveTaskCountRef = useRef(0);
   const pendingTaskCount = generationTasks.filter((task) => ['queued', 'running'].includes(task.status)).length;
   const galleryAuthKey = view === 'favorites' ? authSession?.token || '' : '';
@@ -270,36 +297,55 @@ function App() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
+  const loadGalleryPage = ({ reset = false } = {}) => {
+    if (view === 'history' || view === 'pricing') return;
     if (view === 'favorites' && !authSession?.token) {
       setFeedItems([]);
       setFeedLoading(false);
+      setFeedLoadingMore(false);
+      setFeedHasMore(false);
       setFeedError('请先登录后查看收藏。');
       setAuthOpen(true);
       return;
     }
-    let cancelled = false;
-    setFeedLoading(true);
+    if (reset) {
+      setFeedLoading(true);
+      setFeedItems([]);
+      setFeedHasMore(false);
+    } else {
+      if (feedLoadingMore || !feedHasMore) return;
+      setFeedLoadingMore(true);
+    }
+    const requestID = ++feedRequestRef.current;
     const favoriteQuery = view === 'favorites' ? '&favorite=true' : '';
     const searchQuery = galleryQuery ? `&q=${encodeURIComponent(galleryQuery)}` : '';
-    getJSON(`/api/v1/images/gallery?limit=100${favoriteQuery}${searchQuery}`, authSession?.token)
+    const currentItems = reset ? [] : feedItems;
+    const beforeQuery = !reset && currentItems.length > 0 ? `&before=${encodeURIComponent(currentItems[currentItems.length - 1].id)}` : '';
+    getJSON(`/api/v1/images/gallery?limit=10${favoriteQuery}${searchQuery}${beforeQuery}`, authSession?.token)
       .then(async (payload) => {
         const nextItems = (payload?.items || []).map(normalizeGalleryItem);
-        await preloadGalleryImages(nextItems.slice(0, 16).map((item) => item.src));
-        if (cancelled) return;
-        setFeedItems(nextItems);
+        await preloadGalleryImages(nextItems.map((item) => item.src));
+        if (requestID !== feedRequestRef.current) return;
+        setFeedItems((items) => mergeGalleryItems(reset ? [] : items, nextItems));
+        setFeedHasMore(nextItems.length >= 10);
         setFeedError('');
       })
       .catch((error) => {
-        if (cancelled) return;
+        if (requestID !== feedRequestRef.current) return;
         setFeedError(getErrorMessage(error, '图库加载失败'));
-        setFeedItems([]);
+        if (reset) setFeedItems([]);
       })
       .finally(() => {
-        if (!cancelled) setFeedLoading(false);
+        if (requestID !== feedRequestRef.current) return;
+        setFeedLoading(false);
+        setFeedLoadingMore(false);
       });
+  };
+
+  useEffect(() => {
+    loadGalleryPage({ reset: true });
     return () => {
-      cancelled = true;
+      feedRequestRef.current += 1;
     };
   }, [galleryAuthKey, view, galleryQuery, galleryRefreshKey]);
 
@@ -498,7 +544,7 @@ function App() {
               <>
                 {view === 'home' ? <KomikoComposer models={imageModels} feedItems={feedItems} activeQuery={galleryQuery} onQueryChange={setGalleryQuery} onGenerate={handleGenerateImage} /> : null}
                 {feedError ? <p className="feed-error">{feedError}</p> : null}
-                <MasonryFeed items={feedItems} loading={feedLoading} onOpen={setSelectedImage} onLike={handleLikeImage} onFeature={handleFeatureImage} onFavorite={handleFavoriteImage} />
+                <MasonryFeed items={feedItems} loading={feedLoading} loadingMore={feedLoadingMore} hasMore={feedHasMore} onLoadMore={() => loadGalleryPage({ reset: false })} onOpen={setSelectedImage} onLike={handleLikeImage} onFeature={handleFeatureImage} onFavorite={handleFavoriteImage} />
               </>
             )}
           </main>
@@ -936,29 +982,22 @@ function StyleModal({ selectedStyle, onSelect, onClose }) {
   );
 }
 
-function MasonryFeed({ items, loading, onOpen, onLike, onFeature, onFavorite }) {
-  const [visibleCount, setVisibleCount] = useState(10);
+function MasonryFeed({ items, loading, loadingMore, hasMore, onLoadMore, onOpen, onLike, onFeature, onFavorite }) {
   const loaderRef = useRef(null);
-  const visibleItems = useMemo(() => items.slice(0, visibleCount), [items, visibleCount]);
-  const hasMore = visibleCount < items.length;
-
-  useEffect(() => {
-    setVisibleCount(10);
-  }, [items]);
 
   useEffect(() => {
     if (!hasMore || !loaderRef.current) return undefined;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setVisibleCount((count) => Math.min(count + 10, items.length));
+          onLoadMore();
         }
       },
       { rootMargin: '420px 0px' },
     );
     observer.observe(loaderRef.current);
     return () => observer.disconnect();
-  }, [hasMore, visibleCount, items.length]);
+  }, [hasMore, loadingMore, onLoadMore]);
 
   if (loading) {
     return <GallerySkeleton />;
@@ -967,7 +1006,7 @@ function MasonryFeed({ items, loading, onOpen, onLike, onFeature, onFavorite }) 
   return (
     <section className="masonry-feed" id="inspiration-feed" aria-label="图片瀑布流">
       <div className="masonry-grid">
-        {visibleItems.map((item) => (
+        {items.map((item) => (
           <article className={`masonry-card${item.isFeatured || item.isPromptFeatured ? ' featured-card' : ''}`} key={item.id} onClick={() => onOpen(item)}>
             <MasonryImage item={item} />
             <span className="masonry-info">
@@ -993,9 +1032,10 @@ function MasonryFeed({ items, loading, onOpen, onLike, onFeature, onFavorite }) 
           className="feed-loader"
           type="button"
           ref={loaderRef}
-          onClick={() => setVisibleCount((count) => Math.min(count + 10, items.length))}
+          onClick={onLoadMore}
+          disabled={loadingMore}
         >
-          加载更多 <RefreshCw size={16} />
+          {loadingMore ? '加载中' : '加载更多'} <RefreshCw size={16} />
         </button>
       ) : (
         <p className="feed-end" ref={loaderRef}>已经拉到底了</p>
@@ -1006,7 +1046,7 @@ function MasonryFeed({ items, loading, onOpen, onLike, onFeature, onFavorite }) 
 
 function MasonryImage({ item }) {
   const [loaded, setLoaded] = useState(false);
-  const [ratio, setRatio] = useState(`${item.width || 1024} / ${item.height || 1365}`);
+  const ratio = `${item.width || 1024} / ${item.height || 1360}`;
 
   return (
     <span className={`masonry-media${loaded ? ' loaded' : ''}`} style={{ aspectRatio: ratio }}>
@@ -1016,13 +1056,7 @@ function MasonryImage({ item }) {
         alt={`${item.author || 'Berserk AI'} 的作品`}
         loading="lazy"
         decoding="async"
-        onLoad={(event) => {
-          const { naturalWidth, naturalHeight } = event.currentTarget;
-          if (naturalWidth > 0 && naturalHeight > 0) {
-            setRatio(`${naturalWidth} / ${naturalHeight}`);
-          }
-          setLoaded(true);
-        }}
+        onLoad={() => setLoaded(true)}
       />
     </span>
   );
@@ -1265,7 +1299,7 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
     setBusy(true);
     Promise.resolve(onGenerate({
       prompt: cleanPrompt,
-      style: item.style,
+      style: '',
       size: selectedSize,
       modelID: selectedModel,
       images: referenceImages.map((image) => image.src),
@@ -1420,6 +1454,8 @@ function SizeEditorModal({ onClose }) {
   const [imageName, setImageName] = useState('');
   const [targetWidth, setTargetWidth] = useState(1024);
   const [targetHeight, setTargetHeight] = useState(1360);
+  const [widthInput, setWidthInput] = useState('1024');
+  const [heightInput, setHeightInput] = useState('1360');
   const [crop, setCrop] = useState({ x: 15, y: 10, w: 70, h: 70 });
   const [message, setMessage] = useState('');
   const imageRef = useRef(null);
@@ -1441,9 +1477,47 @@ function SizeEditorModal({ onClose }) {
     setCrop({ x: (100 - w) / 2, y: (100 - h) / 2, w, h });
   };
 
+  const cropPixels = () => {
+    const image = imageRef.current;
+    if (!image?.naturalWidth || !image?.naturalHeight) {
+      return { width: targetWidth, height: targetHeight };
+    }
+    return {
+      width: Math.max(1, Math.round((crop.w / 100) * image.naturalWidth)),
+      height: Math.max(1, Math.round((crop.h / 100) * image.naturalHeight)),
+    };
+  };
+
+  const syncInputsToCrop = (nextCrop = crop) => {
+    const image = imageRef.current;
+    if (!image?.naturalWidth || !image?.naturalHeight) return;
+    setWidthInput(String(Math.max(1, Math.round((nextCrop.w / 100) * image.naturalWidth))));
+    setHeightInput(String(Math.max(1, Math.round((nextCrop.h / 100) * image.naturalHeight))));
+  };
+
+  const applyPreset = (preset) => {
+    setTargetWidth(preset.width);
+    setTargetHeight(preset.height);
+    setWidthInput(String(preset.width));
+    setHeightInput(String(preset.height));
+  };
+
+  const commitInputSize = () => {
+    const width = clampDimensionInput(widthInput, targetWidth);
+    const height = clampDimensionInput(heightInput, targetHeight);
+    setTargetWidth(width);
+    setTargetHeight(height);
+    setWidthInput(String(width));
+    setHeightInput(String(height));
+  };
+
   useEffect(() => {
     if (imageSrc) resetCrop();
   }, [targetWidth, targetHeight, imageSrc]);
+
+  useEffect(() => {
+    syncInputsToCrop();
+  }, [crop, imageSrc]);
 
   useEffect(() => {
     const handleMove = (event) => {
@@ -1480,17 +1554,19 @@ function SizeEditorModal({ onClose }) {
       setMessage('请先上传图片。');
       return;
     }
+    const outputWidth = clampDimensionInput(widthInput, targetWidth);
+    const outputHeight = clampDimensionInput(heightInput, targetHeight);
     const canvas = document.createElement('canvas');
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
     const context = canvas.getContext('2d');
     const sx = (crop.x / 100) * image.naturalWidth;
     const sy = (crop.y / 100) * image.naturalHeight;
     const sw = (crop.w / 100) * image.naturalWidth;
     const sh = (crop.h / 100) * image.naturalHeight;
-    context.drawImage(image, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+    context.drawImage(image, sx, sy, sw, sh, 0, 0, outputWidth, outputHeight);
     const link = document.createElement('a');
-    link.download = `berserk-${targetWidth}x${targetHeight}.png`;
+    link.download = `berserk-${outputWidth}x${outputHeight}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     setMessage('已导出指定尺寸图片。');
@@ -1519,10 +1595,7 @@ function SizeEditorModal({ onClose }) {
                   className={targetWidth === preset.width && targetHeight === preset.height ? 'active' : ''}
                   type="button"
                   key={preset.label}
-                  onClick={() => {
-                    setTargetWidth(preset.width);
-                    setTargetHeight(preset.height);
-                  }}
+                  onClick={() => applyPreset(preset)}
                 >
                   <span>{preset.label}</span>
                   <small>{preset.width} x {preset.height}</small>
@@ -1532,11 +1605,27 @@ function SizeEditorModal({ onClose }) {
             <div className="size-inputs">
               <label>
                 宽度
-                <input type="number" min="128" step="16" value={targetWidth} onChange={(event) => setTargetWidth(Math.max(128, Number(event.target.value) || 1024))} />
+                <input
+                  inputMode="numeric"
+                  value={widthInput}
+                  onChange={(event) => setWidthInput(event.target.value.replace(/[^\d]/g, ''))}
+                  onBlur={commitInputSize}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') event.currentTarget.blur();
+                  }}
+                />
               </label>
               <label>
                 高度
-                <input type="number" min="128" step="16" value={targetHeight} onChange={(event) => setTargetHeight(Math.max(128, Number(event.target.value) || 1024))} />
+                <input
+                  inputMode="numeric"
+                  value={heightInput}
+                  onChange={(event) => setHeightInput(event.target.value.replace(/[^\d]/g, ''))}
+                  onBlur={commitInputSize}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') event.currentTarget.blur();
+                  }}
+                />
               </label>
             </div>
             <button className="size-export" type="button" onClick={exportImage}>
@@ -1555,7 +1644,8 @@ function SizeEditorModal({ onClose }) {
                     event.preventDefault();
                     dragRef.current = { startX: event.clientX, startY: event.clientY, crop, mode: 'move' };
                   }}
-                >
+                  >
+                  <span className="crop-size-label">{cropPixels().width} x {cropPixels().height}</span>
                   {['nw', 'ne', 'se', 'sw'].map((mode) => (
                     <span
                       key={mode}
@@ -2133,6 +2223,12 @@ function resizeCrop(base, dx, dy, mode) {
     w: right - left,
     h: bottom - top,
   };
+}
+
+function clampDimensionInput(value, fallback) {
+  const parsed = Number.parseInt(String(value || '').trim(), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(4096, Math.max(128, parsed));
 }
 
 async function getJSON(path, token = '') {
