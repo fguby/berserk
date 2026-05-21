@@ -162,7 +162,14 @@ const creditPackages = [
   },
 ];
 
-const pricingFaqs = ['积分如何消耗？', '购买后多久到账？', '积分会过期吗？', '支持哪些支付方式？', '生成失败会退还积分吗？', '可以多次购买积分包吗？'];
+const pricingFaqs = [
+  { question: '积分如何消耗？', answer: '不同模型会按配置消耗不同积分，基础模型通常每次生成消耗 5 积分。实际消耗会在生成按钮和模型选择处展示。' },
+  { question: '购买后多久到账？', answer: '如果是站内直接购买会立即到账；通过卡密平台购买时，拿到卡号和密码后在订阅页兑换，兑换成功后积分立即进入当前账号。' },
+  { question: '积分会过期吗？', answer: '当前积分长期保留，不会按月清零。后续如果调整有效期，会提前在页面和公告里说明。' },
+  { question: '支持哪些支付方式？', answer: '支付方式由配置的卡密平台决定。平台支付完成后会提供卡号和密码，你回到这里兑换即可。' },
+  { question: '生成失败会退还积分吗？', answer: '会。后端任务失败时会按本次任务消耗自动退回积分，避免因为接口或模型异常造成损失。' },
+  { question: '可以多次购买积分包吗？', answer: '可以。积分包可以重复购买和兑换，多次兑换的积分会累加到同一个账号余额中。' },
+];
 
 const defaultImageModels = [
   { id: 'gpt-image', name: 'GPT Image', provider: 'OpenAI', creditCost: 5 },
@@ -814,13 +821,13 @@ function StyleModal({ selectedStyle, onSelect, onClose }) {
 }
 
 function MasonryFeed({ items, loading, onOpen, onLike, onFeature, onFavorite }) {
-  const [visibleCount, setVisibleCount] = useState(20);
+  const [visibleCount, setVisibleCount] = useState(10);
   const loaderRef = useRef(null);
   const visibleItems = useMemo(() => items.slice(0, visibleCount), [items, visibleCount]);
   const hasMore = visibleCount < items.length;
 
   useEffect(() => {
-    setVisibleCount(20);
+    setVisibleCount(10);
   }, [items]);
 
   useEffect(() => {
@@ -865,21 +872,18 @@ function MasonryFeed({ items, loading, onOpen, onLike, onFeature, onFavorite }) 
           </article>
         ))}
       </div>
-      <button
-        className="feed-loader"
-        type="button"
-        ref={loaderRef}
-        disabled={!hasMore}
-        onClick={() => setVisibleCount((count) => Math.min(count + 10, items.length))}
-      >
-        {hasMore ? (
-          <>
-            加载更多 <RefreshCw size={16} />
-          </>
-        ) : (
-          `已展示全部 ${items.length} 张`
-        )}
-      </button>
+      {hasMore ? (
+        <button
+          className="feed-loader"
+          type="button"
+          ref={loaderRef}
+          onClick={() => setVisibleCount((count) => Math.min(count + 10, items.length))}
+        >
+          加载更多 <RefreshCw size={16} />
+        </button>
+      ) : (
+        <p className="feed-end" ref={loaderRef}>已经拉到底了</p>
+      )}
     </section>
   );
 }
@@ -1266,6 +1270,7 @@ function PricingPage({ packages, authSession, onAuthOpen, onUserChange, onBack }
   const [redeemPassword, setRedeemPassword] = useState('');
   const [redeemMessage, setRedeemMessage] = useState('');
   const [busyPackage, setBusyPackage] = useState('');
+  const [openFaq, setOpenFaq] = useState('');
 
   const handlePurchase = async (pkg) => {
     if (!authSession?.token) {
@@ -1367,10 +1372,17 @@ function PricingPage({ packages, authSession, onAuthOpen, onUserChange, onBack }
       </section>
       <section className="pricing-faq" id="pricing-faq">
         <h2>常见问题</h2>
-        {pricingFaqs.map((question) => (
-          <button type="button" key={question}>
-            {question} <ChevronDown size={18} />
-          </button>
+        {pricingFaqs.map((item) => (
+          <div className={`faq-item${openFaq === item.question ? ' open' : ''}`} key={item.question}>
+            <button
+              type="button"
+              aria-expanded={openFaq === item.question}
+              onClick={() => setOpenFaq((current) => (current === item.question ? '' : item.question))}
+            >
+              {item.question} <ChevronDown size={18} />
+            </button>
+            {openFaq === item.question ? <p>{item.answer}</p> : null}
+          </div>
         ))}
       </section>
     </section>

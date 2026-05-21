@@ -1363,6 +1363,14 @@ a {
   font-weight: 850;
 }
 
+.feed-end {
+  margin: 18px 0 0;
+  color: #8a8394;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 850;
+}
+
 .site-footer {
   display: grid;
   grid-template-columns: 116px repeat(5, minmax(90px, 1fr));
@@ -2629,11 +2637,14 @@ a {
   margin-bottom: 44px;
 }
 
-.pricing-faq button {
+.faq-item {
+  border-bottom: 1px solid var(--line);
+}
+
+.faq-item button {
   width: 100%;
   height: 54px;
   border: 0;
-  border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2641,6 +2652,23 @@ a {
   background: transparent;
   font-size: 15px;
   font-weight: 850;
+}
+
+.faq-item button svg {
+  transition: transform 160ms ease;
+}
+
+.faq-item.open button svg {
+  transform: rotate(180deg);
+}
+
+.faq-item p {
+  max-width: 860px;
+  margin: -4px 0 18px;
+  color: #625a70;
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 650;
 }
 
 .berserk-app[data-theme="dark"] .pricing-nav div,
@@ -2661,8 +2689,12 @@ a {
 }
 
 .berserk-app[data-theme="dark"] .pricing-card:not(.dark),
-.berserk-app[data-theme="dark"] .pricing-faq button {
+.berserk-app[data-theme="dark"] .faq-item button {
   color: #eee8ff;
+}
+
+.berserk-app[data-theme="dark"] .faq-item p {
+  color: var(--muted);
 }
 
 .berserk-app[data-theme="dark"] .pricing-proof {
