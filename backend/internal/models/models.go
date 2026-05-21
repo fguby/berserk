@@ -7,15 +7,16 @@ type ErrorResponse struct {
 }
 
 type User struct {
-	ID          string    `json:"id"`
-	AppID       string    `json:"appID,omitempty"`
-	Email       string    `json:"email,omitempty"`
-	DisplayName string    `json:"displayName,omitempty"`
-	AvatarURL   string    `json:"avatarURL,omitempty"`
-	Signature   string    `json:"signature,omitempty"`
-	Gender      string    `json:"gender,omitempty"`
-	Credits     int       `json:"credits"`
-	CreatedAt   time.Time `json:"createdAt"`
+	ID             string    `json:"id"`
+	AppID          string    `json:"appID,omitempty"`
+	Email          string    `json:"email,omitempty"`
+	DisplayName    string    `json:"displayName,omitempty"`
+	AvatarURL      string    `json:"avatarURL,omitempty"`
+	Signature      string    `json:"signature,omitempty"`
+	Gender         string    `json:"gender,omitempty"`
+	Credits        int       `json:"credits"`
+	TotalRecharged int       `json:"totalRecharged"`
+	CreatedAt      time.Time `json:"createdAt"`
 }
 
 type UserProfileUpdateRequest struct {

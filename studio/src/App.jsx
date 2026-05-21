@@ -8,7 +8,6 @@ import {
   Copy,
   Download,
   Flame,
-  Gamepad2,
   Home,
   Hash,
   Image as ImageIcon,
@@ -51,7 +50,6 @@ const aiAppItems = [
   { label: 'AI 动漫生成器', icon: ImageIcon },
   { label: '线稿上色', icon: Palette },
   { label: 'AI 动画制作工具', icon: Video },
-  { label: '视频转视频', icon: Gamepad2 },
 ];
 const filterChips = [
   { label: '所有帖子' },
@@ -249,9 +247,11 @@ function App() {
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [generationTasks, setGenerationTasks] = useState([]);
   const [taskNotice, setTaskNotice] = useState('');
+  const [appModal, setAppModal] = useState(null);
   const [galleryRefreshKey, setGalleryRefreshKey] = useState(0);
   const previousActiveTaskCountRef = useRef(0);
   const pendingTaskCount = generationTasks.filter((task) => ['queued', 'running'].includes(task.status)).length;
+  const galleryAuthKey = view === 'favorites' ? authSession?.token || '' : '';
 
   useEffect(() => {
     getJSON('/api/v1/images/models')
@@ -299,7 +299,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [authSession?.token, view, galleryQuery, galleryRefreshKey]);
+  }, [galleryAuthKey, view, galleryQuery, galleryRefreshKey]);
 
   const loadGenerationTasks = async () => {
     if (!authSession?.token) {
@@ -337,6 +337,25 @@ function App() {
       window.clearInterval(timer);
     };
   }, [authSession?.token, pendingTaskCount]);
+
+  useEffect(() => {
+    if (!authSession?.token) return undefined;
+    let cancelled = false;
+    getJSON('/api/v1/me', authSession.token)
+      .then((user) => {
+        if (cancelled || !user?.id) return;
+        setAuthSession((session) => {
+          if (!session?.token) return session;
+          const nextSession = { ...session, user };
+          window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextSession));
+          return nextSession;
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authSession?.token]);
 
   const handleAuthSuccess = (session) => {
     setAuthSession(session);
@@ -426,7 +445,7 @@ function App() {
             setSelectedImage((current) => (current?.id === nextItem.id ? nextItem : current));
           }
         })
-        .catch((error) => window.alert(getErrorMessage(error, '点赞失败')));
+        .catch((error) => setAppModal({ tone: 'error', title: '点赞失败', message: getErrorMessage(error, '点赞失败') }));
     }
   };
 
@@ -454,7 +473,7 @@ function App() {
             setSelectedImage((current) => (current?.id === nextItem.id ? nextItem : current));
           }
         })
-        .catch((error) => window.alert(getErrorMessage(error, '收藏失败')));
+        .catch((error) => setAppModal({ tone: 'error', title: '收藏失败', message: getErrorMessage(error, '收藏失败') }));
     }
   };
 
@@ -480,11 +499,12 @@ function App() {
           </main>
         </>
       )}
-      {selectedImage ? <ImagePreview item={selectedImage} models={imageModels} onClose={() => setSelectedImage(null)} onLike={handleLikeImage} onFavorite={handleFavoriteImage} onGenerate={handleGenerateImage} /> : null}
+      {selectedImage ? <ImagePreview item={selectedImage} models={imageModels} currentUser={authSession?.user} onClose={() => setSelectedImage(null)} onLike={handleLikeImage} onFavorite={handleFavoriteImage} onGenerate={handleGenerateImage} onMessage={setAppModal} /> : null}
       {profileOpen ? <ProfileModal session={authSession} onClose={() => setProfileOpen(false)} onAuthOpen={() => setAuthOpen(true)} onUserChange={handleSessionUser} /> : null}
       {authOpen ? <AuthModal onClose={() => setAuthOpen(false)} onSuccess={handleAuthSuccess} /> : null}
-      {comingSoonOpen ? <ComingSoonModal onClose={() => setComingSoonOpen(false)} /> : null}
-      {taskNotice ? <GenerationNotice message={taskNotice} onClose={() => setTaskNotice('')} /> : null}
+      {comingSoonOpen ? <AppModal title="即将上线" message="AI 应用模块正在打磨中，后续会接入更多创作工具。" onClose={() => setComingSoonOpen(false)} /> : null}
+      {taskNotice ? <AppModal title="正在生成" message={taskNotice} onClose={() => setTaskNotice('')} /> : null}
+      {appModal ? <AppModal {...appModal} onClose={() => setAppModal(null)} /> : null}
     </div>
   );
 }
@@ -567,7 +587,9 @@ function Sidebar({ currentUser, currentView, pendingTaskCount, onNavigate, onPro
       </nav>
       <div className="side-section">
         <button type="button">
-          AI 应用 <ChevronDown size={15} />
+          <span>AI 应用</span>
+          <i />
+          <em>正在筹备</em>
         </button>
         <nav className="side-nav side-subnav" aria-label="AI 应用">
           {aiAppItems.map(({ label, icon: Icon }) => (
@@ -978,7 +1000,7 @@ function MasonryFeed({ items, loading, onOpen, onLike, onFeature, onFavorite }) 
 
 function MasonryImage({ item }) {
   const [loaded, setLoaded] = useState(false);
-  const ratio = `${item.width || 1024} / ${item.height || 1365}`;
+  const [ratio, setRatio] = useState(`${item.width || 1024} / ${item.height || 1365}`);
 
   return (
     <span className={`masonry-media${loaded ? ' loaded' : ''}`} style={{ aspectRatio: ratio }}>
@@ -988,7 +1010,13 @@ function MasonryImage({ item }) {
         alt={`${item.author || 'Berserk AI'} 的作品`}
         loading="lazy"
         decoding="async"
-        onLoad={() => setLoaded(true)}
+        onLoad={(event) => {
+          const { naturalWidth, naturalHeight } = event.currentTarget;
+          if (naturalWidth > 0 && naturalHeight > 0) {
+            setRatio(`${naturalWidth} / ${naturalHeight}`);
+          }
+          setLoaded(true);
+        }}
       />
     </span>
   );
@@ -1055,9 +1083,10 @@ function GenerationHistory({ tasks, onRefresh }) {
   );
 }
 
-function ImagePreview({ item, models, onClose, onLike, onFavorite, onGenerate }) {
+function ImagePreview({ item, models, currentUser, onClose, onLike, onFavorite, onGenerate, onMessage }) {
   const [panelMode, setPanelMode] = useState('detail');
   const [useReference, setUseReference] = useState(false);
+  const canDownload = Number(currentUser?.totalRecharged || 0) > 0;
   useEscape(onClose);
 
   return (
@@ -1066,9 +1095,19 @@ function ImagePreview({ item, models, onClose, onLike, onFavorite, onGenerate })
         <button type="button" onClick={() => onFavorite(item, !item.favoritedByMe)}>
           <Star size={16} fill={item.favoritedByMe ? 'currentColor' : 'none'} /> 收藏
         </button>
-        <a href={item.fullSrc || item.src} download aria-label="下载图片">
-          <Download size={18} />
-        </a>
+        {canDownload ? (
+          <a href={item.fullSrc || item.src} download aria-label="下载图片">
+            <Download size={18} />
+          </a>
+        ) : (
+          <button
+            type="button"
+            aria-label="下载图片"
+            onClick={() => onMessage?.({ tone: 'warning', title: '暂不能下载', message: currentUser ? '购买过积分后即可下载原图。' : '请先登录并购买积分后再下载原图。' })}
+          >
+            <Download size={18} />
+          </button>
+        )}
         <button type="button" aria-label="关闭预览" onClick={onClose}>
           <X size={20} />
         </button>
@@ -1286,31 +1325,21 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
   );
 }
 
-function ComingSoonModal({ onClose }) {
+function AppModal({ title, message, tone = 'info', onClose }) {
   useEscape(onClose);
   return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="coming-soon-card" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-        <button type="button" aria-label="关闭" onClick={onClose}>
+    <div className="app-modal-backdrop" onMouseDown={onClose}>
+      <div className={`app-modal ${tone}`} role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+        <img className="app-modal-decoration" src="/assets/modal-crystal-decoration.png" alt="" />
+        <button className="app-modal-close" type="button" aria-label="关闭" onClick={onClose}>
           <X size={18} />
         </button>
-        <Sparkles size={30} />
-        <h2>即将上线</h2>
-        <p>AI 应用模块正在打磨中，后续会接入更多创作工具。</p>
-      </div>
-    </div>
-  );
-}
-
-function GenerationNotice({ message, onClose }) {
-  useEscape(onClose);
-  return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="generation-notice" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-        <Sparkles size={30} />
-        <h2>正在生成</h2>
+        <span className="app-modal-icon">
+          <Sparkles size={26} />
+        </span>
+        <h2>{title}</h2>
         <p>{message}</p>
-        <button type="button" onClick={onClose}>知道了</button>
+        <button className="app-modal-primary" type="button" onClick={onClose}>知道了</button>
       </div>
     </div>
   );
@@ -1332,7 +1361,7 @@ function AuthModal({ onClose, onSuccess }) {
   const isCodeLogin = mode === 'login-code';
   const needsCode = isRegister || isCodeLogin;
   const title = isRegister ? '注册 BerserkAI' : '欢迎来到 BerserkAI';
-  const subtitle = isRegister ? '注册免费获得 100 积分' : '注册免费获得 100 积分';
+  const subtitle = isRegister ? '注册后即可保存你的创作记录' : '登录后同步保存你的灵感与作品';
   const canRequestCode = Boolean(cleanEmail) && (!isRegister || password.trim().length >= 8);
   const canSubmit =
     cleanEmail &&

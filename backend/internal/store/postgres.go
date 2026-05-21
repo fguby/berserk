@@ -81,16 +81,13 @@ func (p *Postgres) CreateEmailUser(ctx context.Context, appID string, email stri
 	if err != nil {
 		return models.User{}, err
 	}
-	if _, err := p.AddCredits(ctx, userID, 100, "register_bonus", "user", userID); err != nil {
-		return models.User{}, err
-	}
 	return p.GetUser(ctx, userID)
 }
 
 func (p *Postgres) GetEmailUser(ctx context.Context, appID string, email string) (models.User, error) {
 	return p.scanUser(ctx, `
 		select u.id::text, u.app_id, u.email, u.display_name, u.avatar_url, u.signature, u.gender,
-			coalesce(a.balance, 0), u.created_at
+			coalesce(a.balance, 0), coalesce(a.total_recharged, 0), u.created_at
 		from users u
 		left join user_credit_accounts a on a.user_id = u.id
 		where u.app_id = $1 and u.email_normalized = $2
@@ -219,7 +216,7 @@ func (p *Postgres) CreateSession(ctx context.Context, userID string, expiresAt t
 func (p *Postgres) GetUserBySession(ctx context.Context, token string) (models.User, error) {
 	return p.scanUser(ctx, `
 		select u.id::text, u.app_id, u.email, u.display_name, u.avatar_url, u.signature, u.gender,
-			coalesce(a.balance, 0), u.created_at
+			coalesce(a.balance, 0), coalesce(a.total_recharged, 0), u.created_at
 		from auth_sessions s
 		join users u on u.id = s.user_id
 		left join user_credit_accounts a on a.user_id = u.id
@@ -230,7 +227,7 @@ func (p *Postgres) GetUserBySession(ctx context.Context, token string) (models.U
 func (p *Postgres) GetUser(ctx context.Context, userID string) (models.User, error) {
 	return p.scanUser(ctx, `
 		select u.id::text, u.app_id, u.email, u.display_name, u.avatar_url, u.signature, u.gender,
-			coalesce(a.balance, 0), u.created_at
+			coalesce(a.balance, 0), coalesce(a.total_recharged, 0), u.created_at
 		from users u
 		left join user_credit_accounts a on a.user_id = u.id
 		where u.id = $1::uuid
@@ -786,6 +783,7 @@ func (p *Postgres) scanUser(ctx context.Context, query string, args ...any) (mod
 		&user.Signature,
 		&user.Gender,
 		&user.Credits,
+		&user.TotalRecharged,
 		&user.CreatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
