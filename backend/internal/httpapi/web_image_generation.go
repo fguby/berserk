@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,7 +29,7 @@ func (s *Server) generateWebImage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "请输入提示词"})
 	}
 
-	size := firstNonEmpty(request.Size, "1024x1536")
+	size := normalizedImageSize(request.Size)
 	quality := normalizedImageQuality(request.Quality)
 	generationCount := normalizedGenerationCount(request.N)
 	imageModel, err := s.resolveImageModel(c.Request().Context(), request.ModelID)
@@ -109,7 +110,7 @@ func (s *Server) createWebImageTask(c echo.Context) error {
 	}
 
 	style := strings.TrimSpace(request.Style)
-	size := firstNonEmpty(request.Size, "1024x1536")
+	size := normalizedImageSize(request.Size)
 	quality := normalizedImageQuality(request.Quality)
 	request.Size = size
 	request.Quality = quality
@@ -273,6 +274,60 @@ func normalizedImageQuality(quality string) string {
 	default:
 		return "medium"
 	}
+}
+
+func normalizedImageSize(size string) string {
+	value := strings.ToLower(strings.TrimSpace(size))
+	switch value {
+	case "", "auto", "自动":
+		return "1024x1360"
+	case "1:1":
+		return "1024x1024"
+	case "3:4":
+		return "1024x1360"
+	case "4:5":
+		return "1024x1280"
+	case "2:3":
+		return "1024x1536"
+	case "9:16":
+		return "1024x1792"
+	case "4:3":
+		return "1360x1024"
+	case "5:4":
+		return "1280x1024"
+	case "3:2":
+		return "1536x1024"
+	case "16:9":
+		return "1792x1024"
+	case "21:9":
+		return "1792x768"
+	}
+	widthText, heightText, ok := strings.Cut(value, "x")
+	if !ok {
+		return "1024x1360"
+	}
+	width, widthErr := strconv.Atoi(strings.TrimSpace(widthText))
+	height, heightErr := strconv.Atoi(strings.TrimSpace(heightText))
+	if widthErr != nil || heightErr != nil {
+		return "1024x1360"
+	}
+	width = normalizeImageDimension(width)
+	height = normalizeImageDimension(height)
+	return strconv.Itoa(width) + "x" + strconv.Itoa(height)
+}
+
+func normalizeImageDimension(value int) int {
+	if value < 256 {
+		return 256
+	}
+	if value > 2048 {
+		value = 2048
+	}
+	rounded := (value / 16) * 16
+	if rounded < 256 {
+		return 256
+	}
+	return rounded
 }
 
 func (s *Server) listWebGallery(c echo.Context) error {
@@ -517,6 +572,9 @@ func webImageErrorMessage(err error) string {
 	}
 	if strings.Contains(lower, "no image result") {
 		return "生图服务没有返回图片"
+	}
+	if strings.Contains(lower, "divisible by 16") || strings.Contains(lower, "invalid size") || (strings.Contains(lower, "invalid_value") && strings.Contains(lower, "size")) {
+		return "图片尺寸不符合模型要求，系统已修正尺寸配置，请重新生成"
 	}
 	if message == "" {
 		return "图像生成服务暂时不可用"

@@ -27,7 +27,7 @@ func (s *Server) callAinaibaImage(ctx context.Context, request models.MangaGener
 	tool := map[string]any{
 		"type":          "image_generation",
 		"model":         firstNonEmpty(s.xaiImageModel, "gpt-image-2"),
-		"size":          firstNonEmpty(request.Size, "1024x1536"),
+		"size":          normalizedImageSize(request.Size),
 		"quality":       firstNonEmpty(request.Quality, "medium"),
 		"output_format": "png",
 	}

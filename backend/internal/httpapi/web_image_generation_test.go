@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -47,7 +48,7 @@ func TestGenerateWebImage(t *testing.T) {
 		Store:             &webImageTestStore{},
 	})
 
-	body := `{"prompt":"雨夜街头","style":"赛博朋克","n":1,"size":"1024x1536","quality":"medium","modelID":"gpt-image"}`
+	body := `{"prompt":"雨夜街头","style":"赛博朋克","n":1,"size":"1024x1365","quality":"medium","modelID":"gpt-image"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/images/generate", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer test-session")
@@ -73,6 +74,44 @@ func TestGenerateWebImage(t *testing.T) {
 	}
 	if upstreamRequest["model"] != "gpt-5.5" {
 		t.Fatalf("unexpected upstream model: %v", upstreamRequest["model"])
+	}
+	tools, ok := upstreamRequest["tools"].([]any)
+	if !ok || len(tools) != 1 {
+		t.Fatalf("expected one image tool, got %#v", upstreamRequest["tools"])
+	}
+	tool, ok := tools[0].(map[string]any)
+	if !ok {
+		t.Fatalf("unexpected image tool payload: %#v", tools[0])
+	}
+	if tool["size"] != "1024x1360" {
+		t.Fatalf("expected normalized image size, got %v", tool["size"])
+	}
+}
+
+func TestNormalizedImageSize(t *testing.T) {
+	cases := map[string]string{
+		"":          "1024x1360",
+		"自动":        "1024x1360",
+		"3:4":       "1024x1360",
+		"4:3":       "1360x1024",
+		"1024x1365": "1024x1360",
+		"1365x1024": "1360x1024",
+		"1024x1536": "1024x1536",
+		"bad-size":  "1024x1360",
+		"128x128":   "256x256",
+		"5000x5000": "2048x2048",
+	}
+	for input, expected := range cases {
+		if got := normalizedImageSize(input); got != expected {
+			t.Fatalf("normalizedImageSize(%q) = %q, expected %q", input, got, expected)
+		}
+	}
+}
+
+func TestWebImageErrorMessageLocalizesInvalidSize(t *testing.T) {
+	message := webImageErrorMessage(errors.New(`{"error":{"message":"Invalid size '1024x1365'. Width and height must both be divisible by 16.","code":"invalid_value"}}`))
+	if !strings.Contains(message, "图片尺寸不符合模型要求") {
+		t.Fatalf("expected localized size error, got %q", message)
 	}
 }
 

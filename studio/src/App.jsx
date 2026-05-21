@@ -1833,11 +1833,11 @@ function normalizeCreditPackage(pkg) {
 
 function sizeToBackendSize(size) {
   const map = {
-    '自动': '1024x1365',
+    '自动': '1024x1360',
     '1:1': '1024x1024',
-    '3:4': '1024x1365',
+    '3:4': '1024x1360',
     '4:5': '1024x1280',
-    '4:3': '1365x1024',
+    '4:3': '1360x1024',
     '9:16': '1024x1792',
     '16:9': '1792x1024',
     '21:9': '1792x768',
@@ -1845,7 +1845,7 @@ function sizeToBackendSize(size) {
     '5:4': '1280x1024',
     '3:2': '1536x1024',
   };
-  return map[size] || '1024x1365';
+  return map[size] || '1024x1360';
 }
 
 function relativeTime(value) {
