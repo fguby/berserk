@@ -48,6 +48,7 @@ const navItems = [
 const aiAppItems = [
   { label: '角色创建器', icon: UserRound },
   { label: 'AI 动漫生成器', icon: ImageIcon },
+  { label: '尺寸修改器', icon: LayoutTemplate, tool: 'size-editor' },
   { label: '线稿上色', icon: Palette },
   { label: 'AI 动画制作工具', icon: Video },
 ];
@@ -133,29 +134,29 @@ const creditPackages = [
     id: 'credits_100',
     name: '灵感入门包',
     price: '¥10',
-    credits: '100 积分',
+    credits: '110 积分',
     icon: '/pricing-icons/package-100.png',
     tone: 'blue',
-    features: ['适合轻量试用', '可生成约 20 次图片', '购买后立即到账', '积分长期保留'],
+    features: ['适合轻量试用', '可生成约 22 次图片', '购买后立即到账', '积分长期保留'],
   },
   {
     id: 'credits_500',
     name: '创作加速包',
     price: '¥49',
-    credits: '500 积分',
+    credits: '550 积分',
     icon: '/pricing-icons/package-500.png',
     popular: true,
     tone: 'purple',
-    features: ['适合日常创作', '可生成约 100 次图片', '比入门包更划算', '购买后立即到账'],
+    features: ['适合日常创作', '可生成约 110 次图片', '比入门包更划算', '购买后立即到账'],
   },
   {
     id: 'credits_1000',
     name: '高频创作包',
     price: '¥95',
-    credits: '1,000 积分',
+    credits: '1,100 积分',
     icon: '/pricing-icons/package-1000.png',
     tone: 'gold',
-    features: ['适合高频出图', '可生成约 200 次图片', '批量探索不同风格', '购买后立即到账'],
+    features: ['适合高频出图', '可生成约 220 次图片', '批量探索不同风格', '购买后立即到账'],
   },
 ];
 
@@ -245,6 +246,7 @@ function App() {
   const [imageModels, setImageModels] = useState(defaultImageModels);
   const [packageItems, setPackageItems] = useState(creditPackages);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const [sizeEditorOpen, setSizeEditorOpen] = useState(false);
   const [generationTasks, setGenerationTasks] = useState([]);
   const [taskNotice, setTaskNotice] = useState('');
   const [appModal, setAppModal] = useState(null);
@@ -484,7 +486,10 @@ function App() {
       ) : (
         <>
           <TopBar currentUser={authSession?.user} theme={theme} onThemeChange={setTheme} onAuthOpen={() => setAuthOpen(true)} />
-          <Sidebar currentUser={authSession?.user} currentView={view} pendingTaskCount={pendingTaskCount} onNavigate={setView} onProfileOpen={() => setProfileOpen(true)} onAuthOpen={() => setAuthOpen(true)} onLogout={handleLogout} onComingSoon={() => setComingSoonOpen(true)} />
+          <Sidebar currentUser={authSession?.user} currentView={view} pendingTaskCount={pendingTaskCount} onNavigate={setView} onProfileOpen={() => setProfileOpen(true)} onAuthOpen={() => setAuthOpen(true)} onLogout={handleLogout} onAppClick={(tool) => {
+            if (tool === 'size-editor') setSizeEditorOpen(true);
+            else setComingSoonOpen(true);
+          }} />
           <main className="workspace">
             <MobileTopbar onAuthOpen={() => setAuthOpen(true)} />
             {view === 'history' ? (
@@ -502,6 +507,7 @@ function App() {
       {selectedImage ? <ImagePreview item={selectedImage} models={imageModels} currentUser={authSession?.user} onClose={() => setSelectedImage(null)} onLike={handleLikeImage} onFavorite={handleFavoriteImage} onGenerate={handleGenerateImage} onMessage={setAppModal} /> : null}
       {profileOpen ? <ProfileModal session={authSession} onClose={() => setProfileOpen(false)} onAuthOpen={() => setAuthOpen(true)} onUserChange={handleSessionUser} /> : null}
       {authOpen ? <AuthModal onClose={() => setAuthOpen(false)} onSuccess={handleAuthSuccess} /> : null}
+      {sizeEditorOpen ? <SizeEditorModal onClose={() => setSizeEditorOpen(false)} /> : null}
       {comingSoonOpen ? <AppModal title="即将上线" message="AI 应用模块正在打磨中，后续会接入更多创作工具。" onClose={() => setComingSoonOpen(false)} /> : null}
       {taskNotice ? <AppModal title="正在生成" message={taskNotice} onClose={() => setTaskNotice('')} /> : null}
       {appModal ? <AppModal {...appModal} onClose={() => setAppModal(null)} /> : null}
@@ -553,7 +559,7 @@ function TopBar({ currentUser, theme, onThemeChange, onAuthOpen }) {
   );
 }
 
-function Sidebar({ currentUser, currentView, pendingTaskCount, onNavigate, onProfileOpen, onAuthOpen, onLogout, onComingSoon }) {
+function Sidebar({ currentUser, currentView, pendingTaskCount, onNavigate, onProfileOpen, onAuthOpen, onLogout, onAppClick }) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#" aria-label="Berserk AI" onClick={() => onNavigate('home')}>
@@ -592,8 +598,8 @@ function Sidebar({ currentUser, currentView, pendingTaskCount, onNavigate, onPro
           <em>正在筹备</em>
         </button>
         <nav className="side-nav side-subnav" aria-label="AI 应用">
-          {aiAppItems.map(({ label, icon: Icon }) => (
-            <button type="button" key={label} onClick={onComingSoon}>
+          {aiAppItems.map(({ label, icon: Icon, tool }) => (
+            <button type="button" key={label} onClick={() => onAppClick(tool)}>
               <Icon size={17} />
               <span>{label}</span>
             </button>
@@ -649,7 +655,7 @@ function KomikoComposer({ models, feedItems, activeQuery, onQueryChange, onGener
   const [expanded, setExpanded] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState('自动');
-  const [selectedStyle, setSelectedStyle] = useState('艺术专业人士');
+  const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedModel, setSelectedModel] = useState(models[0]?.id || 'gpt-image');
   const [prompt, setPrompt] = useState('');
   const [referenceCount, setReferenceCount] = useState(0);
@@ -720,7 +726,7 @@ function KomikoComposer({ models, feedItems, activeQuery, onQueryChange, onGener
           {expanded ? (
             <>
               <div className="composer-toolbar">
-                <span className="model-pill">{selectedStyle}</span>
+                {selectedStyle ? <span className="model-pill">{selectedStyle}</span> : null}
                 <label className="model-select-shell">
                   <img src={modelIconFor(currentModel)} alt="" />
                   <select className="model-select" value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)} aria-label="选择模型">
@@ -1043,6 +1049,7 @@ function GallerySkeleton() {
 }
 
 function GenerationHistory({ tasks, onRefresh }) {
+  const [previewImage, setPreviewImage] = useState(null);
   const counts = {
     active: tasks.filter((task) => ['queued', 'running'].includes(task.status)).length,
     succeeded: tasks.filter((task) => task.status === 'succeeded').length,
@@ -1086,8 +1093,14 @@ function GenerationHistory({ tasks, onRefresh }) {
         <div className="history-list">
           {tasks.map((task) => (
             <article className={`history-task ${task.status}`} key={task.id}>
-              <div className="history-thumb">
-                {task.resultImage ? <img src={task.resultImage} alt="" /> : <Sparkles size={24} />}
+              <div className={`history-thumb${task.resultImage ? '' : ' glass'}`}>
+                {task.resultImage ? (
+                  <button type="button" onClick={() => setPreviewImage(task.resultImage)} aria-label="查看生成原图">
+                    <img src={task.resultImage} alt="" />
+                  </button>
+                ) : (
+                  <Sparkles size={24} />
+                )}
               </div>
               <section className="history-body">
                 <div className="history-title-row">
@@ -1108,6 +1121,14 @@ function GenerationHistory({ tasks, onRefresh }) {
           ))}
         </div>
       )}
+      {previewImage ? (
+        <div className="history-preview-overlay" role="dialog" aria-modal="true" aria-label="生成图片预览" onClick={() => setPreviewImage(null)}>
+          <button type="button" aria-label="关闭预览" onClick={() => setPreviewImage(null)}>
+            <X size={20} />
+          </button>
+          <img src={previewImage} alt="" onClick={(event) => event.stopPropagation()} />
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -1379,12 +1400,178 @@ function AppModal({ title, message, tone = 'info', onClose }) {
         <button className="app-modal-close" type="button" aria-label="关闭" onClick={onClose}>
           <X size={18} />
         </button>
-        <span className="app-modal-icon">
-          <Sparkles size={26} />
-        </span>
         <h2>{title}</h2>
         <p>{message}</p>
         <button className="app-modal-primary" type="button" onClick={onClose}>知道了</button>
+      </div>
+    </div>
+  );
+}
+
+function SizeEditorModal({ onClose }) {
+  const presets = [
+    { label: '竖版 3:4', width: 1024, height: 1360 },
+    { label: '头像 1:1', width: 1024, height: 1024 },
+    { label: '海报 4:5', width: 1024, height: 1280 },
+    { label: '壁纸 16:9', width: 1792, height: 1024 },
+    { label: '长图 9:16', width: 1024, height: 1792 },
+  ];
+  const [imageSrc, setImageSrc] = useState('');
+  const [imageName, setImageName] = useState('');
+  const [targetWidth, setTargetWidth] = useState(1024);
+  const [targetHeight, setTargetHeight] = useState(1360);
+  const [crop, setCrop] = useState({ x: 15, y: 10, w: 70, h: 70 });
+  const [message, setMessage] = useState('');
+  const imageRef = useRef(null);
+  const dragRef = useRef(null);
+
+  useEscape(onClose);
+
+  const resetCrop = () => {
+    const ratio = Math.max(0.1, targetWidth / targetHeight);
+    let w = 74;
+    let h = w / ratio;
+    if (h > 82) {
+      h = 82;
+      w = h * ratio;
+    }
+    setCrop({ x: (100 - w) / 2, y: (100 - h) / 2, w, h });
+  };
+
+  useEffect(() => {
+    if (imageSrc) resetCrop();
+  }, [targetWidth, targetHeight, imageSrc]);
+
+  useEffect(() => {
+    const handleMove = (event) => {
+      if (!dragRef.current || !imageRef.current) return;
+      const rect = imageRef.current.getBoundingClientRect();
+      const dx = ((event.clientX - dragRef.current.startX) / rect.width) * 100;
+      const dy = ((event.clientY - dragRef.current.startY) / rect.height) * 100;
+      setCrop((current) => ({
+        ...current,
+        x: clamp(dragRef.current.crop.x + dx, 0, 100 - current.w),
+        y: clamp(dragRef.current.crop.y + dy, 0, 100 - current.h),
+      }));
+    };
+    const handleUp = () => {
+      dragRef.current = null;
+    };
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+    };
+  }, []);
+
+  const handleFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImageName(file.name);
+    setMessage('');
+    const reader = new FileReader();
+    reader.onload = () => setImageSrc(String(reader.result || ''));
+    reader.readAsDataURL(file);
+  };
+
+  const exportImage = () => {
+    const image = imageRef.current;
+    if (!image || !image.complete) {
+      setMessage('请先上传图片。');
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const context = canvas.getContext('2d');
+    const sx = (crop.x / 100) * image.naturalWidth;
+    const sy = (crop.y / 100) * image.naturalHeight;
+    const sw = (crop.w / 100) * image.naturalWidth;
+    const sh = (crop.h / 100) * image.naturalHeight;
+    context.drawImage(image, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+    const link = document.createElement('a');
+    link.download = `berserk-${targetWidth}x${targetHeight}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    setMessage('已导出指定尺寸图片。');
+  };
+
+  return (
+    <div className="size-editor-overlay" role="dialog" aria-modal="true" aria-label="尺寸修改器" onMouseDown={onClose}>
+      <div className="size-editor" onMouseDown={(event) => event.stopPropagation()}>
+        <button className="size-editor-close" type="button" aria-label="关闭尺寸修改器" onClick={onClose}>
+          <X size={18} />
+        </button>
+        <header>
+          <strong>尺寸修改器</strong>
+          <span>上传图片，选择目标尺寸后拖动裁切框。</span>
+        </header>
+        <section className="size-editor-body">
+          <aside>
+            <label className="size-upload">
+              <ImageIcon size={20} />
+              <span>{imageName || '选择本地图片'}</span>
+              <input type="file" accept="image/*" onChange={handleFile} />
+            </label>
+            <div className="size-presets">
+              {presets.map((preset) => (
+                <button
+                  className={targetWidth === preset.width && targetHeight === preset.height ? 'active' : ''}
+                  type="button"
+                  key={preset.label}
+                  onClick={() => {
+                    setTargetWidth(preset.width);
+                    setTargetHeight(preset.height);
+                  }}
+                >
+                  {preset.label}
+                  <small>{preset.width} x {preset.height}</small>
+                </button>
+              ))}
+            </div>
+            <div className="size-inputs">
+              <label>
+                宽度
+                <input type="number" min="128" step="16" value={targetWidth} onChange={(event) => setTargetWidth(Math.max(128, Number(event.target.value) || 1024))} />
+              </label>
+              <label>
+                高度
+                <input type="number" min="128" step="16" value={targetHeight} onChange={(event) => setTargetHeight(Math.max(128, Number(event.target.value) || 1024))} />
+              </label>
+            </div>
+            <button className="size-export" type="button" onClick={exportImage}>
+              <Download size={17} /> 导出图片
+            </button>
+            {message ? <p>{message}</p> : null}
+          </aside>
+          <div className="size-crop-area">
+            {imageSrc ? (
+              <div className="size-image-wrap">
+                <img ref={imageRef} src={imageSrc} alt="" onLoad={resetCrop} draggable={false} />
+                <div
+                  className="crop-frame"
+                  style={{ left: `${crop.x}%`, top: `${crop.y}%`, width: `${crop.w}%`, height: `${crop.h}%` }}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    dragRef.current = { startX: event.clientX, startY: event.clientY, crop };
+                  }}
+                >
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            ) : (
+              <div className="size-empty">
+                <ImageIcon size={34} />
+                <strong>上传图片后开始裁切</strong>
+                <span>目标尺寸确定后，裁切框会按照比例显示。</span>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -1871,7 +2058,7 @@ function normalizeCreditPackage(pkg) {
     icon: pkg.icon || fallbackIcons[pkg.id] || `/pricing-icons/${pkg.id}.png`,
     paymentURL: pkg.paymentURL || '',
     tone: credits >= 1000 ? 'gold' : credits >= 500 ? 'purple' : 'blue',
-    popular: credits === 500,
+    popular: pkg.id === 'credits_500' || credits === 550,
     features: [`可兑换 ${credits.toLocaleString('zh-CN')} 积分`, `约可生成 ${Math.max(1, Math.floor(credits / 5))} 张基础模型图片`, '支持卡密兑换到账', '积分长期保留'],
   };
 }
@@ -1911,6 +2098,10 @@ function formatViews(value) {
   if (count >= 10000) return `${(count / 10000).toFixed(1)}万`;
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
   return String(Math.max(0, Math.round(count)));
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 async function getJSON(path, token = '') {

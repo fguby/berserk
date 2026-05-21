@@ -91,9 +91,9 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		`insert into credit_package_configs (package_id, name, credits, amount_cents, currency, icon, payment_url, enabled, sort_order)
 		values
 			('credits_trial', '限时体验包', 10, 100, 'CNY', '/pricing-icons/package-trial.png', '', true, 5),
-			('credits_100', '灵感入门包', 100, 1000, 'CNY', '/pricing-icons/package-100.png', '', true, 10),
-			('credits_500', '创作加速包', 500, 4900, 'CNY', '/pricing-icons/package-500.png', '', true, 20),
-			('credits_1000', '高频创作包', 1000, 9500, 'CNY', '/pricing-icons/package-1000.png', '', true, 30),
+			('credits_100', '灵感入门包', 110, 1000, 'CNY', '/pricing-icons/package-100.png', '', true, 10),
+			('credits_500', '创作加速包', 550, 4900, 'CNY', '/pricing-icons/package-500.png', '', true, 20),
+			('credits_1000', '高频创作包', 1100, 9500, 'CNY', '/pricing-icons/package-1000.png', '', true, 30),
 			('credits_5000', '工作室储备包', 5000, 45000, 'CNY', '/pricing-icons/credits-5000.png', '', false, 40)
 		on conflict (package_id) do update set
 			name = excluded.name,
@@ -115,6 +115,15 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			created_at timestamptz not null default now()
 		)`,
 		`alter table credit_redeem_codes add column if not exists password_hash text not null default ''`,
+		`update credit_redeem_codes set credits = case package_id
+			when 'credits_trial' then 10
+			when 'credits_100' then 110
+			when 'credits_500' then 550
+			when 'credits_1000' then 1100
+			else credits
+		end
+		where status = 'unused'
+			and package_id in ('credits_trial', 'credits_100', 'credits_500', 'credits_1000')`,
 		`create table if not exists image_models (
 			id text primary key,
 			name text not null,

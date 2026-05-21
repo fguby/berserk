@@ -30,7 +30,10 @@ func (s *Server) generateWebImage(c echo.Context) error {
 	}
 
 	size := normalizedImageSize(request.Size)
+	request.Size = size
+	request.Style = strings.TrimSpace(request.Style)
 	quality := normalizedImageQuality(request.Quality)
+	request.Quality = quality
 	generationCount := normalizedGenerationCount(request.N)
 	imageModel, err := s.resolveImageModel(c.Request().Context(), request.ModelID)
 	if err != nil {
@@ -43,8 +46,10 @@ func (s *Server) generateWebImage(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "扣减积分失败，请稍后重试"})
 	}
 
+	fullPrompt := buildWebImagePrompt(prompt, request.Style, request)
+	s.logWebImagePrompt("web image prompt", imageModel.ID, request.Style, size, fullPrompt)
 	images, err := s.callAinaibaImage(c.Request().Context(), models.MangaGenerateRequest{
-		Prompt:  buildWebImagePrompt(prompt, request.Style, request),
+		Prompt:  fullPrompt,
 		Images:  request.Images,
 		N:       generationCount,
 		Size:    size,
@@ -114,6 +119,7 @@ func (s *Server) createWebImageTask(c echo.Context) error {
 	quality := normalizedImageQuality(request.Quality)
 	request.Size = size
 	request.Quality = quality
+	request.Style = style
 	generationCount := normalizedGenerationCount(request.N)
 	imageModel, err := s.resolveImageModel(c.Request().Context(), request.ModelID)
 	if err != nil {
@@ -208,8 +214,10 @@ func (s *Server) processWebImageTask(task models.WebImageTask, imageRefs []strin
 		return
 	}
 
+	fullPrompt := buildWebImagePrompt(task.Prompt, task.Style, request)
+	s.logWebImagePrompt("web image task prompt", task.ModelID, task.Style, task.Size, fullPrompt)
 	images, err := s.callAinaibaImage(ctx, models.MangaGenerateRequest{
-		Prompt:  buildWebImagePrompt(task.Prompt, task.Style, request),
+		Prompt:  fullPrompt,
 		Images:  imageRefs,
 		N:       task.N,
 		Size:    task.Size,
@@ -562,6 +570,13 @@ func buildWebImagePrompt(prompt string, style string, request models.WebImageGen
 		parts = append(parts, "Use the supplied reference image only for visual guidance. Keep the generated result original.")
 	}
 	return strings.Join(parts, "\n\n")
+}
+
+func (s *Server) logWebImagePrompt(message string, modelID string, style string, size string, prompt string) {
+	if s.logger == nil {
+		return
+	}
+	s.logger.Info(message, "modelID", modelID, "style", strings.TrimSpace(style), "size", size, "fullPrompt", prompt)
 }
 
 func webImageErrorMessage(err error) string {
