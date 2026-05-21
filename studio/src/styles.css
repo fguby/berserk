@@ -475,6 +475,7 @@ a {
   color: #5f596c;
   font-size: 11px;
   font-weight: 800;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -485,6 +486,7 @@ a {
   color: #6828f3;
   font-size: 13px;
   font-weight: 950;
+  text-align: center;
 }
 
 .social-row {
@@ -506,6 +508,11 @@ a {
   font-size: 16px;
   font-weight: 900;
   text-decoration: none;
+}
+
+.social-row img {
+  width: 18px;
+  height: 18px;
 }
 
 .workspace {
@@ -1411,6 +1418,128 @@ a {
   font-weight: 850;
 }
 
+.generation-history {
+  width: min(920px, 100%);
+  margin: 24px auto 0;
+}
+
+.generation-history > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.generation-history h1 {
+  margin: 0;
+  color: #201633;
+  font-size: 28px;
+  font-weight: 950;
+}
+
+.generation-history p {
+  margin: 6px 0 0;
+  color: #7b728d;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.generation-history > header button {
+  height: 38px;
+  border: 1px solid #e2d8f5;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  color: #6426df;
+  background: #fff;
+  font-weight: 900;
+}
+
+.history-empty,
+.history-task {
+  border: 1px solid #ece7f4;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.history-empty {
+  padding: 42px;
+  color: #7d748f;
+  text-align: center;
+  font-weight: 850;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.history-task {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+}
+
+.history-task > div {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #7a2cff;
+  background: #f5efff;
+  overflow: hidden;
+}
+
+.history-task > div img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.history-task section {
+  min-width: 0;
+}
+
+.history-task strong {
+  color: #211a32;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.history-task.running strong,
+.history-task.queued strong {
+  color: #e24166;
+}
+
+.history-task p {
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: #6f6680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-task em {
+  display: block;
+  margin-top: 5px;
+  color: #c43745;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.history-task > span {
+  color: #6d6380;
+  font-size: 13px;
+  font-weight: 850;
+}
+
 .site-footer {
   display: grid;
   grid-template-columns: 116px repeat(5, minmax(90px, 1fr));
@@ -1631,8 +1760,25 @@ a {
 
 .preview-tools {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
+}
+
+.preview-tools span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #70798a;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.preview-tools span img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
 }
 
 .preview-tools button {
@@ -1645,13 +1791,6 @@ a {
   background: transparent;
   font-size: 13px;
   font-weight: 850;
-}
-
-.preview-prompt h2 {
-  margin: 0 0 12px;
-  font-size: 22px;
-  line-height: 1.28;
-  font-weight: 950;
 }
 
 .preview-prompt p {
@@ -1897,6 +2036,10 @@ a {
   min-width: 54px;
   border: 1px solid #e4e0ea;
   border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   color: #3b3548;
   background: #fff;
   font-size: 13px;
@@ -2001,7 +2144,8 @@ a {
   font-weight: 950;
 }
 
-.coming-soon-card {
+.coming-soon-card,
+.generation-notice {
   position: relative;
   width: min(360px, calc(100vw - 40px));
   border-radius: 18px;
@@ -2024,23 +2168,37 @@ a {
   background: #f5f1fb;
 }
 
-.coming-soon-card > svg {
+.coming-soon-card > svg,
+.generation-notice > svg {
   color: #7936ff;
   filter: drop-shadow(0 8px 14px rgba(121, 54, 255, 0.22));
 }
 
-.coming-soon-card h2 {
+.coming-soon-card h2,
+.generation-notice h2 {
   margin: 14px 0 8px;
   font-size: 24px;
   font-weight: 950;
 }
 
-.coming-soon-card p {
+.coming-soon-card p,
+.generation-notice p {
   margin: 0;
   color: #6f6680;
   line-height: 1.7;
   font-size: 14px;
   font-weight: 750;
+}
+
+.generation-notice > button {
+  height: 40px;
+  min-width: 126px;
+  margin-top: 22px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #6530ff, #bd34ff);
+  font-weight: 950;
 }
 
 .auth-card {

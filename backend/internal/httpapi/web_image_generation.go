@@ -111,10 +111,19 @@ func (s *Server) createWebImageTask(c echo.Context) error {
 	style := strings.TrimSpace(request.Style)
 	size := firstNonEmpty(request.Size, "1024x1536")
 	quality := normalizedImageQuality(request.Quality)
+	request.Size = size
+	request.Quality = quality
 	generationCount := normalizedGenerationCount(request.N)
 	imageModel, err := s.resolveImageModel(c.Request().Context(), request.ModelID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: "invalid image model"})
+	}
+	active, err := s.store.HasActiveWebImageTask(c.Request().Context(), user.ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "检查生成任务失败"})
+	}
+	if active {
+		return c.JSON(http.StatusConflict, models.ErrorResponse{Message: "已有图片正在生成，请完成后再提交新的任务"})
 	}
 	creditsCost := generationCount * imageModel.CreditCost
 	if _, err := s.store.ConsumeCredits(c.Request().Context(), user.ID, creditsCost, "web_image_task", "web_image_task", ""); errors.Is(err, store.ErrInsufficientCredits) {
@@ -124,13 +133,17 @@ func (s *Server) createWebImageTask(c echo.Context) error {
 	}
 
 	task, err := s.store.CreateWebImageTask(c.Request().Context(), user.ID, prompt, style, imageModel.ID, size, quality, generationCount, creditsCost)
+	if errors.Is(err, store.ErrConflict) {
+		_, _ = s.store.AddCredits(c.Request().Context(), user.ID, creditsCost, "web_image_task_refund", "web_image_task", "")
+		return c.JSON(http.StatusConflict, models.ErrorResponse{Message: "已有图片正在生成，请完成后再提交新的任务"})
+	}
 	if err != nil {
 		_, _ = s.store.AddCredits(c.Request().Context(), user.ID, creditsCost, "web_image_task_refund", "web_image_task", "")
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "create image task failed"})
 	}
 
 	imageRefs := append([]string(nil), request.Images...)
-	go s.processWebImageTask(task, imageRefs)
+	go s.processWebImageTask(task, imageRefs, request)
 
 	user, _ = s.store.GetUser(c.Request().Context(), user.ID)
 	return c.JSON(http.StatusAccepted, models.WebImageTaskResponse{Task: task, User: &user})
@@ -188,14 +201,14 @@ func (s *Server) setWebImageTaskPublic(c echo.Context) error {
 	return c.JSON(http.StatusOK, models.WebImageTaskResponse{Task: task})
 }
 
-func (s *Server) processWebImageTask(task models.WebImageTask, imageRefs []string) {
+func (s *Server) processWebImageTask(task models.WebImageTask, imageRefs []string, request models.WebImageGenerateRequest) {
 	ctx := context.Background()
 	if err := s.store.MarkWebImageTaskRunning(ctx, task.UserID, task.ID); err != nil {
 		return
 	}
 
 	images, err := s.callAinaibaImage(ctx, models.MangaGenerateRequest{
-		Prompt:  buildWebImagePrompt(task.Prompt, task.Style, models.WebImageGenerateRequest{Quality: task.Quality, Size: task.Size}),
+		Prompt:  buildWebImagePrompt(task.Prompt, task.Style, request),
 		Images:  imageRefs,
 		N:       task.N,
 		Size:    task.Size,

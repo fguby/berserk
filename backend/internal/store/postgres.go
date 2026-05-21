@@ -48,6 +48,7 @@ type BerserkStore interface {
 	SetGalleryImageLike(ctx context.Context, userID string, id string, liked bool) (models.WebGalleryImage, error)
 	SetGalleryImageFavorite(ctx context.Context, userID string, id string, favorited bool) (models.WebGalleryImage, error)
 	SetGalleryImageFeatured(ctx context.Context, userID string, id string, featured bool, promptFeatured bool) (models.WebGalleryImage, error)
+	HasActiveWebImageTask(ctx context.Context, userID string) (bool, error)
 	CreateWebImageTask(ctx context.Context, userID string, prompt string, style string, modelID string, size string, quality string, n int, creditsCost int) (models.WebImageTask, error)
 	ListWebImageTasks(ctx context.Context, userID string, limit int) ([]models.WebImageTask, error)
 	GetWebImageTask(ctx context.Context, userID string, id string) (models.WebImageTask, error)
@@ -650,7 +651,23 @@ func (p *Postgres) CreateWebImageTask(ctx context.Context, userID string, prompt
 		values ($1::uuid, $2, $3, $4, coalesce((select name from image_models where id = $4), ''), $5, $6, $7, $8)
 		returning
 	`), userID, prompt, style, strings.TrimSpace(modelID), size, quality, n, creditsCost)
-	return scanWebImageTask(row)
+	task, err := scanWebImageTask(row)
+	if err != nil && strings.Contains(err.Error(), "web_image_tasks_one_active_per_user_idx") {
+		return models.WebImageTask{}, ErrConflict
+	}
+	return task, err
+}
+
+func (p *Postgres) HasActiveWebImageTask(ctx context.Context, userID string) (bool, error) {
+	var active bool
+	err := p.pool.QueryRow(ctx, `
+		select exists (
+			select 1
+			from web_image_tasks
+			where user_id = $1::uuid and status in ('queued', 'running')
+		)
+	`, userID).Scan(&active)
+	return active, err
 }
 
 func (p *Postgres) ListWebImageTasks(ctx context.Context, userID string, limit int) ([]models.WebImageTask, error) {

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BadgeCheck,
   BarChart3,
   BookImage,
   Brush,
@@ -195,7 +194,7 @@ function tagsFromImages(items) {
     ['赛博朋克', /赛博|霓虹|未来感/],
   ];
   const tags = dictionary.filter(([, pattern]) => pattern.test(source)).map(([label]) => label);
-  return Array.from(new Set(['所有帖子', '精选', ...tags, 'BerserkAIConfession', 'OC', 'NSFW'])).slice(0, 18);
+  return Array.from(new Set(['小说封面', '所有帖子', '精选', ...tags, 'BerserkAIConfession', 'OC', 'NSFW'])).slice(0, 18);
 }
 
 function normalizeGalleryItem(item) {
@@ -231,7 +230,7 @@ function modelIconFor(model) {
   if (id.includes('gemini') || provider.includes('google') || provider.includes('gemini')) return 'https://cdn.simpleicons.org/google/4285F4';
   if (id.includes('qwen') || provider.includes('alibaba') || provider.includes('aliyun')) return 'https://cdn.simpleicons.org/alibabacloud/FF6A00';
   if (id.includes('seed') || provider.includes('byte') || provider.includes('doubao')) return 'https://cdn.simpleicons.org/bytedance/111111';
-  return 'https://cdn.simpleicons.org/openai/111111';
+  return '/assets/openai-logo.svg';
 }
 
 function App() {
@@ -248,6 +247,11 @@ function App() {
   const [imageModels, setImageModels] = useState(defaultImageModels);
   const [packageItems, setPackageItems] = useState(creditPackages);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const [generationTasks, setGenerationTasks] = useState([]);
+  const [taskNotice, setTaskNotice] = useState('');
+  const [galleryRefreshKey, setGalleryRefreshKey] = useState(0);
+  const previousActiveTaskCountRef = useRef(0);
+  const pendingTaskCount = generationTasks.filter((task) => ['queued', 'running'].includes(task.status)).length;
 
   useEffect(() => {
     getJSON('/api/v1/images/models')
@@ -295,7 +299,44 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [authSession?.token, view, galleryQuery]);
+  }, [authSession?.token, view, galleryQuery, galleryRefreshKey]);
+
+  const loadGenerationTasks = async () => {
+    if (!authSession?.token) {
+      setGenerationTasks([]);
+      previousActiveTaskCountRef.current = 0;
+      return [];
+    }
+    const payload = await getJSON('/api/v1/images/tasks?limit=30', authSession.token);
+    const items = Array.isArray(payload?.items) ? payload.items : [];
+    const activeCount = items.filter((task) => ['queued', 'running'].includes(task.status)).length;
+    if (previousActiveTaskCountRef.current > 0 && activeCount === 0) {
+      setGalleryRefreshKey((value) => value + 1);
+    }
+    previousActiveTaskCountRef.current = activeCount;
+    setGenerationTasks(items);
+    return items;
+  };
+
+  useEffect(() => {
+    if (!authSession?.token) {
+      setGenerationTasks([]);
+      previousActiveTaskCountRef.current = 0;
+      return undefined;
+    }
+    let cancelled = false;
+    const refresh = () => {
+      loadGenerationTasks().catch(() => {
+        if (!cancelled) setGenerationTasks([]);
+      });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, pendingTaskCount > 0 ? 4500 : 12000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [authSession?.token, pendingTaskCount]);
 
   const handleAuthSuccess = (session) => {
     setAuthSession(session);
@@ -331,7 +372,7 @@ function App() {
       setAuthOpen(true);
       return;
     }
-    const payload = await authPostJSON('/api/v1/images/generate', authSession.token, {
+    const payload = await authPostJSON('/api/v1/images/tasks', authSession.token, {
       prompt,
       style,
       size: sizeToBackendSize(size),
@@ -344,6 +385,12 @@ function App() {
       lockedSeed,
     }, '生成失败');
     if (payload?.user) handleSessionUser(payload.user);
+    if (payload?.task) {
+      setTaskNotice('图片已进入生成队列，你可以在生成记录里查看进度。');
+      setGenerationTasks((items) => [payload.task, ...items.filter((task) => task.id !== payload.task.id)]);
+      previousActiveTaskCountRef.current = Math.max(1, previousActiveTaskCountRef.current);
+      return;
+    }
     const created = (payload?.images || []).map((image, index) => ({
       id: `generated-${Date.now()}-${index}`,
       title: prompt.slice(0, 24) || '新生成图片',
@@ -418,12 +465,18 @@ function App() {
       ) : (
         <>
           <TopBar currentUser={authSession?.user} theme={theme} onThemeChange={setTheme} onAuthOpen={() => setAuthOpen(true)} />
-          <Sidebar currentUser={authSession?.user} currentView={view} onNavigate={setView} onProfileOpen={() => setProfileOpen(true)} onAuthOpen={() => setAuthOpen(true)} onLogout={handleLogout} onComingSoon={() => setComingSoonOpen(true)} />
+          <Sidebar currentUser={authSession?.user} currentView={view} pendingTaskCount={pendingTaskCount} onNavigate={setView} onProfileOpen={() => setProfileOpen(true)} onAuthOpen={() => setAuthOpen(true)} onLogout={handleLogout} onComingSoon={() => setComingSoonOpen(true)} />
           <main className="workspace">
             <MobileTopbar onAuthOpen={() => setAuthOpen(true)} />
-            <KomikoComposer models={imageModels} feedItems={feedItems} activeQuery={galleryQuery} onQueryChange={setGalleryQuery} onGenerate={handleGenerateImage} />
-            {feedError ? <p className="feed-error">{feedError}</p> : null}
-            <MasonryFeed items={feedItems} loading={feedLoading} onOpen={setSelectedImage} onLike={handleLikeImage} onFeature={handleFeatureImage} onFavorite={handleFavoriteImage} />
+            {view === 'history' ? (
+              <GenerationHistory tasks={generationTasks} onRefresh={loadGenerationTasks} />
+            ) : (
+              <>
+                <KomikoComposer models={imageModels} feedItems={feedItems} activeQuery={galleryQuery} onQueryChange={setGalleryQuery} onGenerate={handleGenerateImage} />
+                {feedError ? <p className="feed-error">{feedError}</p> : null}
+                <MasonryFeed items={feedItems} loading={feedLoading} onOpen={setSelectedImage} onLike={handleLikeImage} onFeature={handleFeatureImage} onFavorite={handleFavoriteImage} />
+              </>
+            )}
           </main>
         </>
       )}
@@ -431,6 +484,7 @@ function App() {
       {profileOpen ? <ProfileModal session={authSession} onClose={() => setProfileOpen(false)} onAuthOpen={() => setAuthOpen(true)} onUserChange={handleSessionUser} /> : null}
       {authOpen ? <AuthModal onClose={() => setAuthOpen(false)} onSuccess={handleAuthSuccess} /> : null}
       {comingSoonOpen ? <ComingSoonModal onClose={() => setComingSoonOpen(false)} /> : null}
+      {taskNotice ? <GenerationNotice message={taskNotice} onClose={() => setTaskNotice('')} /> : null}
     </div>
   );
 }
@@ -479,7 +533,7 @@ function TopBar({ currentUser, theme, onThemeChange, onAuthOpen }) {
   );
 }
 
-function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOpen, onLogout, onComingSoon }) {
+function Sidebar({ currentUser, currentView, pendingTaskCount, onNavigate, onProfileOpen, onAuthOpen, onLogout, onComingSoon }) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#" aria-label="Berserk AI" onClick={() => onNavigate('home')}>
@@ -507,7 +561,7 @@ function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOp
           >
             <Icon size={18} />
             <span>{label}</span>
-            {badge ? <em>{badge}</em> : null}
+            {itemView === 'history' && pendingTaskCount > 0 ? <em>{pendingTaskCount}</em> : badge ? <em>{badge}</em> : null}
           </a>
         ))}
       </nav>
@@ -545,7 +599,7 @@ function Sidebar({ currentUser, currentView, onNavigate, onProfileOpen, onAuthOp
       )}
       <div className="social-row">
         <a href="https://www.douyin.com/user/MS4wLjABAAAAPctRiYcwFwNx7JTqw55gxq20_jzroA_b48W1edHc7eI" target="_blank" rel="noreferrer" aria-label="Berserk AI 抖音">
-          ♬
+          <img src="/assets/douyin-icon.svg" alt="" />
         </a>
       </div>
     </aside>
@@ -572,7 +626,7 @@ function MobileTopbar({ onAuthOpen }) {
 function KomikoComposer({ models, feedItems, activeQuery, onQueryChange, onGenerate }) {
   const [expanded, setExpanded] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
-  const [selectedSize, setSelectedSize] = useState('3:4');
+  const [selectedSize, setSelectedSize] = useState('自动');
   const [selectedStyle, setSelectedStyle] = useState('艺术专业人士');
   const [selectedModel, setSelectedModel] = useState(models[0]?.id || 'gpt-image');
   const [prompt, setPrompt] = useState('');
@@ -586,7 +640,8 @@ function KomikoComposer({ models, feedItems, activeQuery, onQueryChange, onGener
   const dynamicTags = useMemo(() => tagsFromImages(feedItems), [feedItems]);
   const currentModel = models.find((model) => model.id === selectedModel) || models[0] || defaultImageModels[0];
   const applyQuery = (value) => {
-    const query = value === '所有帖子' ? '' : value.trim();
+    const normalized = value.trim();
+    const query = normalized === '所有帖子' || normalized === activeQuery ? '' : normalized;
     onQueryChange(query);
     setSearchText(query);
     setSearchOpen(false);
@@ -959,6 +1014,47 @@ function GallerySkeleton() {
   );
 }
 
+function GenerationHistory({ tasks, onRefresh }) {
+  const statusText = {
+    queued: '排队中',
+    running: '生成中',
+    succeeded: '已完成',
+    failed: '失败',
+  };
+  return (
+    <section className="generation-history">
+      <header>
+        <div>
+          <h1>生成记录</h1>
+          <p>后台异步生成中，完成后图片会自动进入首页图库。</p>
+        </div>
+        <button type="button" onClick={onRefresh}>
+          <RefreshCw size={16} /> 刷新
+        </button>
+      </header>
+      {tasks.length === 0 ? (
+        <div className="history-empty">暂无生成记录</div>
+      ) : (
+        <div className="history-list">
+          {tasks.map((task) => (
+            <article className={`history-task ${task.status}`} key={task.id}>
+              <div>
+                {task.resultImage ? <img src={task.resultImage} alt="" /> : <Sparkles size={22} />}
+              </div>
+              <section>
+                <strong>{statusText[task.status] || task.status}</strong>
+                <p>{task.prompt}</p>
+                {task.errorMessage ? <em>{task.errorMessage}</em> : null}
+              </section>
+              <span>{task.modelName || 'GPT Image'} · {task.creditsCost || 0} 积分</span>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ImagePreview({ item, models, onClose, onLike, onFavorite, onGenerate }) {
   const [panelMode, setPanelMode] = useState('detail');
   const [useReference, setUseReference] = useState(false);
@@ -998,7 +1094,6 @@ function ImagePreview({ item, models, onClose, onLike, onFavorite, onGenerate })
                   <strong>{item.author}</strong>
                   <small>@{String(item.author || 'BerserkAI').replace(/\s+/g, '')}</small>
                 </span>
-                <em><img src={modelIconFor(item)} alt="" /> {item.model}</em>
               </div>
               <div className="preview-stats">
                 <button type="button" onClick={() => onLike(item, !item.likedByMe)}>{item.likedByMe ? '♥' : '♡'} {item.likeCount ?? item.likes}</button>
@@ -1006,10 +1101,10 @@ function ImagePreview({ item, models, onClose, onLike, onFavorite, onGenerate })
                 <span>{relativeTime(item.createdAt)}</span>
               </div>
               <div className={`preview-prompt${item.isPromptFeatured ? ' prompt-featured' : ''}`}>
-                <h2>{item.title}</h2>
                 <p>{item.promptZh}</p>
               </div>
               <div className="preview-tools">
+                <span><img src={modelIconFor(item)} alt="" /> {item.model}</span>
                 <button type="button" onClick={() => navigator.clipboard?.writeText(item.promptZh || '')}><Copy size={16} /> 复制</button>
               </div>
               <div className="preview-bottom-actions">
@@ -1037,10 +1132,9 @@ function ImagePreview({ item, models, onClose, onLike, onFavorite, onGenerate })
 function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }) {
   const [promptText, setPromptText] = useState(item.promptZh || '');
   const [selectedModel, setSelectedModel] = useState(item.modelID || models[0]?.id || 'gpt-image');
-  const [selectedSize, setSelectedSize] = useState('3:4');
+  const [selectedSize, setSelectedSize] = useState('自动');
   const [quality, setQuality] = useState('standard');
   const [quantity, setQuantity] = useState(1);
-  const [lockedSeed, setLockedSeed] = useState(false);
   const [resolution2K, setResolution2K] = useState(false);
   const [sizeMenuOpen, setSizeMenuOpen] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState('');
@@ -1074,7 +1168,6 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
       n: quantity,
       negativePrompt,
       resolution: resolution2K ? '2k' : 'auto',
-      lockedSeed,
     }))
       .catch((error) => window.alert(getErrorMessage(error, '生成失败')))
       .finally(() => setBusy(false));
@@ -1096,10 +1189,6 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
       if (clean.includes('低饱和')) return clean;
       return `${clean}\n\n低饱和配色，柔和色阶，避免过度鲜艳。`;
     });
-  };
-
-  const toggleNegativePrompt = () => {
-    setNegativePrompt((value) => (value ? '' : '低质量、模糊、畸形手部、多余手指、水印、错误文字、过曝、严重噪点'));
   };
 
   const handleReferenceFiles = (event) => {
@@ -1124,11 +1213,6 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
           <LayoutTemplate size={17} />
         </button>
       </header>
-      <button className={`negative-card${negativePrompt ? ' active' : ''}`} type="button" onClick={toggleNegativePrompt}>
-        <span>反推提示词</span>
-        <small>{negativePrompt ? '已启用反向约束' : useReference ? '从参考图开始创作' : '使用当前提示词创作'}</small>
-        <img src={item.authorAvatarURL || '/assets/berserk-ai-icon.png'} alt="" />
-      </button>
       <div className="reference-strip">
         <span><ImageIcon size={15} /> {referenceImages.length}/5</span>
         {referenceImages[0] ? <img src={referenceImages[0].preview} alt="" /> : null}
@@ -1154,9 +1238,8 @@ function PreviewGeneratePanel({ item, models, useReference, onBack, onGenerate }
       <div className="generate-setting-row">
         <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button>
         <button type="button" onClick={() => setQuantity((value) => (value >= 4 ? 1 : value + 1))}>{quantity}/4</button>
-        <button type="button" className={lockedSeed ? 'active' : ''} onClick={() => setLockedSeed((value) => !value)}><BadgeCheck size={14} /></button>
         <div className="size-select">
-          <button type="button" onClick={() => setSizeMenuOpen((value) => !value)}>{selectedSize}</button>
+          <button type="button" onClick={() => setSizeMenuOpen((value) => !value)}><LayoutTemplate size={14} /> {selectedSize}</button>
           {sizeMenuOpen ? (
             <div className="size-menu">
               {generationSizes.map((size) => (
@@ -1214,6 +1297,20 @@ function ComingSoonModal({ onClose }) {
         <Sparkles size={30} />
         <h2>即将上线</h2>
         <p>AI 应用模块正在打磨中，后续会接入更多创作工具。</p>
+      </div>
+    </div>
+  );
+}
+
+function GenerationNotice({ message, onClose }) {
+  useEscape(onClose);
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <div className="generation-notice" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+        <Sparkles size={30} />
+        <h2>正在生成</h2>
+        <p>{message}</p>
+        <button type="button" onClick={onClose}>知道了</button>
       </div>
     </div>
   );
@@ -1830,6 +1927,11 @@ function localizeError(message, fallbackMessage = '操作失败，请稍后重�
     'password must be at least 8 characters': '密码至少需要 8 位',
     'invalid email or password': '邮箱或密码不正确',
     'credits are not enough': '积分不足，请先充值',
+    '已有图片正在生成，请完成后再提交新的任务': '已有图片正在生成，请完成后再提交新的任务',
+    'invalid image task payload': '生图请求格式不正确',
+    'prompt is required': '请输入提示词',
+    'invalid image model': '请选择可用的生图模型',
+    'create image task failed': '创建生成任务失败，请稍后重试',
   };
   if (dictionary[text]) return dictionary[text];
   if (/^[\x00-\x7F\s.,:;!?()'"/_-]+$/.test(text)) return fallbackMessage;

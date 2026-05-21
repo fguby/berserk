@@ -158,6 +158,9 @@ func (s *webImageTestStore) SetGalleryImageFavorite(context.Context, string, str
 func (s *webImageTestStore) SetGalleryImageFeatured(context.Context, string, string, bool, bool) (models.WebGalleryImage, error) {
 	return models.WebGalleryImage{}, store.ErrNotFound
 }
+func (s *webImageTestStore) HasActiveWebImageTask(context.Context, string) (bool, error) {
+	return false, nil
+}
 func (s *webImageTestStore) CreateWebImageTask(context.Context, string, string, string, string, string, string, int, int) (models.WebImageTask, error) {
 	return models.WebImageTask{}, nil
 }

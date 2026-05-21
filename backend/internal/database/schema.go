@@ -192,6 +192,9 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			completed_at timestamptz,
 			updated_at timestamptz not null default now()
 		)`,
+		`create unique index if not exists web_image_tasks_one_active_per_user_idx
+			on web_image_tasks (user_id)
+			where status in ('queued', 'running')`,
 		`create index if not exists web_image_tasks_user_created_idx on web_image_tasks (user_id, created_at desc)`,
 	}
 	for _, statement := range statements {
