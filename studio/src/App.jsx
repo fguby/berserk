@@ -1578,55 +1578,96 @@ function SizeEditorModal({ onClose }) {
   const [message, setMessage] = useState('');
   const imageRef = useRef(null);
   const dragRef = useRef(null);
+  const activeDimensionInputRef = useRef('');
 
   useEscape(onClose);
 
-  const resetCrop = () => {
-    const image = imageRef.current;
-    const targetRatio = Math.max(0.1, targetWidth / targetHeight);
-    const imageRatio = image?.naturalWidth && image?.naturalHeight ? image.naturalWidth / image.naturalHeight : targetRatio;
-    let w = 100;
-    let h = 100;
-    if (imageRatio > targetRatio) {
-      w = (targetRatio / imageRatio) * 100;
-    } else if (imageRatio < targetRatio) {
-      h = (imageRatio / targetRatio) * 100;
-    }
-    setCrop({ x: (100 - w) / 2, y: (100 - h) / 2, w, h });
-  };
-
-  const cropPixels = () => {
+  const cropToInputSize = (nextCrop = crop) => {
     const image = imageRef.current;
     if (!image?.naturalWidth || !image?.naturalHeight) {
       return { width: targetWidth, height: targetHeight };
     }
     return {
-      width: Math.max(1, Math.round((crop.w / 100) * image.naturalWidth)),
-      height: Math.max(1, Math.round((crop.h / 100) * image.naturalHeight)),
+      width: Math.max(1, Math.round((nextCrop.w / 100) * image.naturalWidth)),
+      height: Math.max(1, Math.round((nextCrop.h / 100) * image.naturalHeight)),
     };
   };
 
-  const syncInputsToCrop = (nextCrop = crop) => {
+  const fitSizeToImage = (width, height) => {
+    const image = imageRef.current;
+    if (!image?.naturalWidth || !image?.naturalHeight) {
+      return { width, height };
+    }
+    const ratio = Math.max(0.01, width / height);
+    let nextWidth = Math.min(width, image.naturalWidth);
+    let nextHeight = Math.round(nextWidth / ratio);
+    if (nextHeight > image.naturalHeight) {
+      nextHeight = image.naturalHeight;
+      nextWidth = Math.round(nextHeight * ratio);
+    }
+    return {
+      width: Math.max(1, Math.min(image.naturalWidth, nextWidth)),
+      height: Math.max(1, Math.min(image.naturalHeight, nextHeight)),
+    };
+  };
+
+  const applyPixelCrop = (width, height, options = {}) => {
     const image = imageRef.current;
     if (!image?.naturalWidth || !image?.naturalHeight) return;
-    setWidthInput(String(Math.max(1, Math.round((nextCrop.w / 100) * image.naturalWidth))));
-    setHeightInput(String(Math.max(1, Math.round((nextCrop.h / 100) * image.naturalHeight))));
+    const nextWidth = Math.max(1, Math.min(image.naturalWidth, Math.round(width)));
+    const nextHeight = Math.max(1, Math.min(image.naturalHeight, Math.round(height)));
+    setCrop((current) => {
+      const nextW = (nextWidth / image.naturalWidth) * 100;
+      const nextH = (nextHeight / image.naturalHeight) * 100;
+      const keepPosition = options.keepPosition === true;
+      return {
+        x: keepPosition ? clamp(current.x, 0, 100 - nextW) : (100 - nextW) / 2,
+        y: keepPosition ? clamp(current.y, 0, 100 - nextH) : (100 - nextH) / 2,
+        w: nextW,
+        h: nextH,
+      };
+    });
+    setWidthInput(String(nextWidth));
+    setHeightInput(String(nextHeight));
+  };
+
+  const resetCrop = () => {
+    const fitted = fitSizeToImage(targetWidth, targetHeight);
+    applyPixelCrop(fitted.width, fitted.height);
+  };
+
+  const syncInputsToCrop = (nextCrop = crop) => {
+    if (activeDimensionInputRef.current) return;
+    const size = cropToInputSize(nextCrop);
+    setWidthInput(String(size.width));
+    setHeightInput(String(size.height));
   };
 
   const applyPreset = (preset) => {
     setTargetWidth(preset.width);
     setTargetHeight(preset.height);
-    setWidthInput(String(preset.width));
-    setHeightInput(String(preset.height));
+    if (!imageRef.current?.naturalWidth || !imageRef.current?.naturalHeight) {
+      setWidthInput(String(preset.width));
+      setHeightInput(String(preset.height));
+      return;
+    }
+    const fitted = fitSizeToImage(preset.width, preset.height);
+    applyPixelCrop(fitted.width, fitted.height);
   };
 
   const commitInputSize = () => {
-    const width = clampDimensionInput(widthInput, targetWidth);
-    const height = clampDimensionInput(heightInput, targetHeight);
+    activeDimensionInputRef.current = '';
+    const currentSize = cropToInputSize();
+    const width = clampDimensionInput(widthInput, currentSize.width);
+    const height = clampDimensionInput(heightInput, currentSize.height);
     setTargetWidth(width);
     setTargetHeight(height);
-    setWidthInput(String(width));
-    setHeightInput(String(height));
+    if (!imageRef.current?.naturalWidth || !imageRef.current?.naturalHeight) {
+      setWidthInput(String(width));
+      setHeightInput(String(height));
+      return;
+    }
+    applyPixelCrop(width, height, { keepPosition: true });
   };
 
   useEffect(() => {
@@ -1672,8 +1713,9 @@ function SizeEditorModal({ onClose }) {
       setMessage('请先上传图片。');
       return;
     }
-    const outputWidth = clampDimensionInput(widthInput, targetWidth);
-    const outputHeight = clampDimensionInput(heightInput, targetHeight);
+    const cropSize = cropToInputSize();
+    const outputWidth = clampDimensionInput(widthInput, cropSize.width);
+    const outputHeight = clampDimensionInput(heightInput, cropSize.height);
     const canvas = document.createElement('canvas');
     canvas.width = outputWidth;
     canvas.height = outputHeight;
@@ -1726,7 +1768,13 @@ function SizeEditorModal({ onClose }) {
                 <input
                   inputMode="numeric"
                   value={widthInput}
-                  onChange={(event) => setWidthInput(event.target.value.replace(/[^\d]/g, ''))}
+                  onFocus={() => {
+                    activeDimensionInputRef.current = 'width';
+                  }}
+                  onChange={(event) => {
+                    activeDimensionInputRef.current = 'width';
+                    setWidthInput(event.target.value.replace(/[^\d]/g, ''));
+                  }}
                   onBlur={commitInputSize}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') event.currentTarget.blur();
@@ -1738,7 +1786,13 @@ function SizeEditorModal({ onClose }) {
                 <input
                   inputMode="numeric"
                   value={heightInput}
-                  onChange={(event) => setHeightInput(event.target.value.replace(/[^\d]/g, ''))}
+                  onFocus={() => {
+                    activeDimensionInputRef.current = 'height';
+                  }}
+                  onChange={(event) => {
+                    activeDimensionInputRef.current = 'height';
+                    setHeightInput(event.target.value.replace(/[^\d]/g, ''));
+                  }}
                   onBlur={commitInputSize}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') event.currentTarget.blur();
@@ -1763,7 +1817,7 @@ function SizeEditorModal({ onClose }) {
                     dragRef.current = { startX: event.clientX, startY: event.clientY, crop, mode: 'move' };
                   }}
                   >
-                  <span className="crop-size-label">{cropPixels().width} x {cropPixels().height}</span>
+                  <span className="crop-size-label">{cropToInputSize().width} x {cropToInputSize().height}</span>
                   {['nw', 'ne', 'se', 'sw'].map((mode) => (
                     <span
                       key={mode}
