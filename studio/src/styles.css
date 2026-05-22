@@ -1205,18 +1205,26 @@ a {
 }
 
 .masonry-grid {
-  column-count: 4;
-  column-gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(var(--masonry-columns, 4), minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.masonry-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .masonry-card {
   position: relative;
   display: block;
   width: 100%;
-  margin: 0 0 12px;
+  margin: 0;
   padding: 0;
   overflow: hidden;
-  break-inside: avoid;
   border: 1px solid #e5e1eb;
   border-radius: 8px;
   background: #fff;
@@ -3664,7 +3672,7 @@ a {
   }
 
   .masonry-grid {
-    column-count: 3;
+    gap: 12px;
   }
 }
 
@@ -3689,12 +3697,11 @@ a {
   }
 
   .masonry-grid {
-    column-count: 2;
-    column-gap: 10px;
+    gap: 10px;
   }
 
-  .masonry-card {
-    margin-bottom: 10px;
+  .masonry-column {
+    gap: 10px;
   }
 
   .site-footer {

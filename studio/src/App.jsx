@@ -984,6 +984,8 @@ function StyleModal({ selectedStyle, onSelect, onClose }) {
 
 function MasonryFeed({ items, loading, loadingMore, hasMore, onLoadMore, onOpen, onLike, onFeature, onFavorite }) {
   const loaderRef = useRef(null);
+  const columnCount = useMasonryColumnCount();
+  const columns = useStableMasonryColumns(items, columnCount);
 
   useEffect(() => {
     if (!hasMore || !loaderRef.current) return undefined;
@@ -1005,26 +1007,30 @@ function MasonryFeed({ items, loading, loadingMore, hasMore, onLoadMore, onOpen,
 
   return (
     <section className="masonry-feed" id="inspiration-feed" aria-label="图片瀑布流">
-      <div className="masonry-grid">
-        {items.map((item) => (
-          <article className={`masonry-card${item.isFeatured || item.isPromptFeatured ? ' featured-card' : ''}`} key={item.id} onClick={() => onOpen(item)}>
-            <MasonryImage item={item} />
-            <span className="masonry-info">
-              <span className="masonry-author-line">
-                <img src={item.authorAvatarURL || '/assets/berserk-ai-icon.png'} alt="" />
-                <small>{item.author}</small>
-                <em>♡ {item.likeCount ?? item.likes}</em>
-              </span>
-            </span>
-            <span className="card-actions" onClick={(event) => event.stopPropagation()}>
-              <button type="button" aria-label="点赞" onClick={() => onLike(item, !item.likedByMe)}>
-                {item.likedByMe ? '♥' : '♡'}
-              </button>
-              <button type="button" aria-label="收藏" onClick={() => onFavorite(item, !item.favoritedByMe)}>
-                <Star size={15} fill={item.favoritedByMe ? 'currentColor' : 'none'} />
-              </button>
-            </span>
-          </article>
+      <div className="masonry-grid" style={{ '--masonry-columns': columnCount }}>
+        {columns.map((column, columnIndex) => (
+          <div className="masonry-column" key={`column-${columnIndex}`}>
+            {column.map((item) => (
+              <article className={`masonry-card${item.isFeatured || item.isPromptFeatured ? ' featured-card' : ''}`} key={item.id} onClick={() => onOpen(item)}>
+                <MasonryImage item={item} />
+                <span className="masonry-info">
+                  <span className="masonry-author-line">
+                    <img src={item.authorAvatarURL || '/assets/berserk-ai-icon.png'} alt="" />
+                    <small>{item.author}</small>
+                    <em>♡ {item.likeCount ?? item.likes}</em>
+                  </span>
+                </span>
+                <span className="card-actions" onClick={(event) => event.stopPropagation()}>
+                  <button type="button" aria-label="点赞" onClick={() => onLike(item, !item.likedByMe)}>
+                    {item.likedByMe ? '♥' : '♡'}
+                  </button>
+                  <button type="button" aria-label="收藏" onClick={() => onFavorite(item, !item.favoritedByMe)}>
+                    <Star size={15} fill={item.favoritedByMe ? 'currentColor' : 'none'} />
+                  </button>
+                </span>
+              </article>
+            ))}
+          </div>
         ))}
       </div>
       {hasMore ? (
@@ -1042,6 +1048,95 @@ function MasonryFeed({ items, loading, loadingMore, hasMore, onLoadMore, onOpen,
       )}
     </section>
   );
+}
+
+function useMasonryColumnCount() {
+  const getCount = () => {
+    if (typeof window === 'undefined') return 4;
+    if (window.innerWidth <= 760) return 2;
+    if (window.innerWidth <= 1180) return 3;
+    return 4;
+  };
+  const [columnCount, setColumnCount] = useState(getCount);
+
+  useEffect(() => {
+    const handleResize = () => setColumnCount(getCount());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return columnCount;
+}
+
+function useStableMasonryColumns(items, columnCount) {
+  const layoutRef = useRef(null);
+  return useMemo(() => {
+    const count = Math.max(1, columnCount || 4);
+    const ids = items.map((item) => item.id).filter(Boolean);
+    const previous = layoutRef.current;
+    const canAppend =
+      previous &&
+      previous.columnCount === count &&
+      previous.ids.length <= ids.length &&
+      previous.ids.every((id, index) => id === ids[index]);
+
+    const layout = canAppend
+      ? {
+          columnCount: count,
+          ids,
+          columnIDs: previous.columnIDs.map((column) => [...column]),
+          heights: [...previous.heights],
+          assigned: new Map(previous.assigned),
+        }
+      : buildMasonryLayout(items, count);
+
+    if (canAppend) {
+      const itemByID = new Map(items.map((item) => [item.id, item]));
+      ids.slice(previous.ids.length).forEach((id) => {
+        const item = itemByID.get(id);
+        if (!item || layout.assigned.has(id)) return;
+        const target = shortestColumnIndex(layout.heights);
+        layout.columnIDs[target].push(id);
+        layout.assigned.set(id, target);
+        layout.heights[target] += masonryItemWeight(item);
+      });
+    }
+
+    layoutRef.current = layout;
+    const itemByID = new Map(items.map((item) => [item.id, item]));
+    return layout.columnIDs.map((column) => column.map((id) => itemByID.get(id)).filter(Boolean));
+  }, [items, columnCount]);
+}
+
+function buildMasonryLayout(items, columnCount) {
+  const count = Math.max(1, columnCount || 4);
+  const columnIDs = Array.from({ length: count }, () => []);
+  const heights = Array.from({ length: count }, () => 0);
+  const assigned = new Map();
+  const ids = [];
+  items.forEach((item) => {
+    if (!item?.id) return;
+    const target = shortestColumnIndex(heights);
+    ids.push(item.id);
+    columnIDs[target].push(item.id);
+    assigned.set(item.id, target);
+    heights[target] += masonryItemWeight(item);
+  });
+  return { columnCount: count, ids, columnIDs, heights, assigned };
+}
+
+function shortestColumnIndex(heights) {
+  let target = 0;
+  for (let index = 1; index < heights.length; index += 1) {
+    if (heights[index] < heights[target]) target = index;
+  }
+  return target;
+}
+
+function masonryItemWeight(item) {
+  const width = Number(item?.width) || 1024;
+  const height = Number(item?.height) || 1360;
+  return height / Math.max(width, 1) + 0.24;
 }
 
 function MasonryImage({ item }) {
