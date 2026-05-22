@@ -33,7 +33,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://127.0.0.1:8080/berserk';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'https://neo-ai.pw/berserk').replace(/\/$/, '');
 const AUTH_APP_ID = 'berserk.web';
 const AUTH_STORAGE_KEY = 'berserk-ai-auth-session';
 const STYLE_FAVORITES_KEY = 'berserk-ai-style-favorites';
