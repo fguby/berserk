@@ -212,6 +212,13 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			on web_image_tasks (user_id)
 			where status in ('queued', 'running')`,
 		`create index if not exists web_image_tasks_user_created_idx on web_image_tasks (user_id, created_at desc)`,
+		`update web_gallery_images g
+		set is_public = true
+		where not exists (select 1 from web_gallery_images where is_public = true)
+			and not exists (
+				select 1 from web_image_tasks t
+				where t.gallery_image_id = g.id and t.is_public = false
+			)`,
 	}
 	for index, statement := range statements {
 		if _, err := pool.Exec(ctx, statement); err != nil {
