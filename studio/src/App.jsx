@@ -539,7 +539,7 @@ function App() {
           <main className="workspace">
             <MobileTopbar onAuthOpen={() => setAuthOpen(true)} />
             {view === 'history' ? (
-              <GenerationHistory tasks={generationTasks} onRefresh={loadGenerationTasks} />
+              <GenerationHistory tasks={generationTasks} currentUser={authSession?.user} onRefresh={loadGenerationTasks} onMessage={setAppModal} />
             ) : (
               <>
                 {view === 'home' ? <KomikoComposer models={imageModels} feedItems={feedItems} activeQuery={galleryQuery} onQueryChange={setGalleryQuery} onGenerate={handleGenerateImage} /> : null}
@@ -1200,8 +1200,9 @@ function GallerySkeleton() {
   );
 }
 
-function GenerationHistory({ tasks, onRefresh }) {
-  const [previewImage, setPreviewImage] = useState(null);
+function GenerationHistory({ tasks, currentUser, onRefresh, onMessage }) {
+  const [previewTask, setPreviewTask] = useState(null);
+  const canDownload = Number(currentUser?.totalRecharged || 0) > 0;
   const counts = {
     active: tasks.filter((task) => ['queued', 'running'].includes(task.status)).length,
     succeeded: tasks.filter((task) => task.status === 'succeeded').length,
@@ -1247,7 +1248,7 @@ function GenerationHistory({ tasks, onRefresh }) {
             <article className={`history-task ${task.status}`} key={task.id}>
               <div className={`history-thumb${task.resultImage ? '' : ' glass'}`}>
                 {task.resultImage ? (
-                  <button type="button" onClick={() => setPreviewImage(task.resultImage)} aria-label="查看生成原图">
+                  <button type="button" onClick={() => setPreviewTask(task)} aria-label="查看生成原图">
                     <img src={task.resultImage} alt="" />
                   </button>
                 ) : (
@@ -1273,12 +1274,30 @@ function GenerationHistory({ tasks, onRefresh }) {
           ))}
         </div>
       )}
-      {previewImage ? (
-        <div className="history-preview-overlay" role="dialog" aria-modal="true" aria-label="生成图片预览" onClick={() => setPreviewImage(null)}>
-          <button type="button" aria-label="关闭预览" onClick={() => setPreviewImage(null)}>
-            <X size={20} />
-          </button>
-          <img src={previewImage} alt="" onClick={(event) => event.stopPropagation()} />
+      {previewTask?.resultImage ? (
+        <div className="history-preview-overlay" role="dialog" aria-modal="true" aria-label="生成图片预览" onClick={() => setPreviewTask(null)}>
+          <div className="history-preview-actions" onClick={(event) => event.stopPropagation()}>
+            {canDownload ? (
+              <a href={previewTask.resultImage} download={`berserk-${previewTask.id || 'generated-image'}.png`} aria-label="下载生成原图">
+                <Download size={18} /> 下载原图
+              </a>
+            ) : (
+              <button
+                type="button"
+                aria-label="下载生成原图"
+                onClick={() => {
+                  setPreviewTask(null);
+                  onMessage?.({ tone: 'warning', title: '暂不能下载', message: currentUser ? '购买过积分后即可下载原图。' : '请先登录并购买积分后再下载原图。' });
+                }}
+              >
+                <Download size={18} /> 下载原图
+              </button>
+            )}
+            <button type="button" aria-label="关闭预览" onClick={() => setPreviewTask(null)}>
+              <X size={20} />
+            </button>
+          </div>
+          <img src={previewTask.resultImage} alt="" onClick={(event) => event.stopPropagation()} />
         </div>
       ) : null}
     </section>

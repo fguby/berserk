@@ -1784,19 +1784,41 @@ a {
   backdrop-filter: blur(14px);
 }
 
-.history-preview-overlay > button {
+.history-preview-actions {
   position: fixed;
   top: 26px;
   right: 28px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-preview-actions button,
+.history-preview-actions a {
   width: 42px;
   height: 42px;
   border: 0;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #2b203e;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.2);
+}
+
+.history-preview-actions a,
+.history-preview-actions button:first-child {
+  width: auto;
+  padding: 0 16px;
+  gap: 7px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #7434ff, #bb3fff);
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .history-preview-overlay img {
