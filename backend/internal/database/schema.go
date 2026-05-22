@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -23,6 +24,7 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			updated_at timestamptz not null default now(),
 			unique (app_id, email_normalized)
 		)`,
+		`create unique index if not exists users_app_id_email_normalized_idx on users (app_id, email_normalized)`,
 		`create table if not exists auth_sessions (
 			token text primary key,
 			user_id uuid not null references users(id) on delete cascade,
@@ -52,6 +54,7 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			total_recharged integer not null default 0,
 			updated_at timestamptz not null default now()
 		)`,
+		`create unique index if not exists user_credit_accounts_user_id_idx on user_credit_accounts (user_id)`,
 		`create table if not exists credit_ledger (
 			id uuid primary key default gen_random_uuid(),
 			user_id uuid not null references users(id) on delete cascade,
@@ -88,6 +91,7 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			created_at timestamptz not null default now(),
 			updated_at timestamptz not null default now()
 		)`,
+		`create unique index if not exists credit_package_configs_package_id_idx on credit_package_configs (package_id)`,
 		`insert into credit_package_configs (package_id, name, credits, amount_cents, currency, icon, payment_url, enabled, sort_order)
 		values
 			('credits_trial', '限时体验包', 10, 100, 'CNY', '/pricing-icons/package-trial.png', '', true, 5),
@@ -135,6 +139,7 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			created_at timestamptz not null default now(),
 			updated_at timestamptz not null default now()
 		)`,
+		`create unique index if not exists image_models_id_idx on image_models (id)`,
 		`insert into image_models (id, name, provider, description, credit_cost, enabled, sort_order)
 		values
 			('gpt-image', 'GPT Image', 'OpenAI', '通用商业海报与插画', 5, true, 10),
@@ -170,6 +175,7 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			created_at timestamptz not null default now(),
 			primary key (image_id, user_id)
 		)`,
+		`create unique index if not exists web_gallery_image_likes_image_user_idx on web_gallery_image_likes (image_id, user_id)`,
 		`create index if not exists web_gallery_image_likes_image_idx on web_gallery_image_likes (image_id)`,
 		`create table if not exists web_gallery_image_favorites (
 			image_id uuid not null references web_gallery_images(id) on delete cascade,
@@ -177,6 +183,7 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			created_at timestamptz not null default now(),
 			primary key (image_id, user_id)
 		)`,
+		`create unique index if not exists web_gallery_image_favorites_image_user_idx on web_gallery_image_favorites (image_id, user_id)`,
 		`create index if not exists web_gallery_image_favorites_user_created_idx on web_gallery_image_favorites (user_id, created_at desc)`,
 		`create index if not exists web_gallery_image_favorites_image_idx on web_gallery_image_favorites (image_id)`,
 		`create table if not exists web_image_tasks (
@@ -206,9 +213,9 @@ func EnsureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			where status in ('queued', 'running')`,
 		`create index if not exists web_image_tasks_user_created_idx on web_image_tasks (user_id, created_at desc)`,
 	}
-	for _, statement := range statements {
+	for index, statement := range statements {
 		if _, err := pool.Exec(ctx, statement); err != nil {
-			return err
+			return fmt.Errorf("run schema statement %d: %w", index+1, err)
 		}
 	}
 	return nil
