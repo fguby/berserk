@@ -1157,12 +1157,23 @@ function MasonryImage({ item }) {
         alt={`${item.author || 'Berserk AI'} 的作品`}
         loading="lazy"
         decoding="async"
+        onError={() => setLoaded(true)}
         onLoad={(event) => {
           const { naturalWidth, naturalHeight } = event.currentTarget;
           if (naturalWidth > 0 && naturalHeight > 0) {
             setRatio(`${naturalWidth} / ${naturalHeight}`);
           }
           setLoaded(true);
+        }}
+        ref={(node) => {
+          if (!node || loaded || !node.complete) return;
+          const { naturalWidth, naturalHeight } = node;
+          window.requestAnimationFrame(() => {
+            if (naturalWidth > 0 && naturalHeight > 0) {
+              setRatio(`${naturalWidth} / ${naturalHeight}`);
+            }
+            setLoaded(true);
+          });
         }}
       />
     </span>
