@@ -21,17 +21,24 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := database.Open(ctx, cfg.DatabaseURL)
+	logger.Info("connecting database")
+	connectCtx, cancelConnect := context.WithTimeout(ctx, 20*time.Second)
+	pool, err := database.Open(connectCtx, cfg.DatabaseURL)
+	cancelConnect()
 	if err != nil {
 		logger.Error("connect database", "error", err)
 		os.Exit(1)
 	}
 	defer pool.Close()
 
-	if err := database.EnsureSchema(ctx, pool); err != nil {
+	logger.Info("checking database schema")
+	schemaCtx, cancelSchema := context.WithTimeout(ctx, 2*time.Minute)
+	if err := database.EnsureSchema(schemaCtx, pool); err != nil {
+		cancelSchema()
 		logger.Error("ensure database schema", "error", err)
 		os.Exit(1)
 	}
+	cancelSchema()
 	logger.Info("database schema checked")
 
 	ticketStore := store.NewPostgres(pool)
