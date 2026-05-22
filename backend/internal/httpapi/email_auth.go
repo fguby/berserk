@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	defaultEmailCodeTTL       = 90 * time.Second
+	defaultEmailCodeTTL       = 10 * time.Minute
 	defaultEmailSetupTokenTTL = 10 * time.Minute
 )
 
@@ -185,6 +185,9 @@ func (s *Server) authEmailLogin(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "登录失败，请稍后重试"})
 		}
 		if err := s.consumeEmailCodeWithFallback(c.Request().Context(), appID, email, "login", code); err != nil {
+			if s.logger != nil {
+				s.logger.Warn("login email code rejected", "email", email, "error", err)
+			}
 			return c.JSON(http.StatusUnauthorized, models.ErrorResponse{Message: "验证码无效或已过期，请重新获取"})
 		}
 		token, err := s.store.CreateSession(c.Request().Context(), user.ID, time.Now().Add(90*24*time.Hour))

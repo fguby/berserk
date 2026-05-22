@@ -123,8 +123,9 @@ func (p *Postgres) SaveEmailCode(ctx context.Context, appID string, email string
 	_, err := p.pool.Exec(ctx, `
 		update email_auth_codes
 		set consumed_at = now()
-		where email = $1 and purpose = $2 and consumed_at is null
-	`, normalizeEmail(email), purpose)
+		where app_id = $1 and email = $2 and purpose = $3 and consumed_at is null
+			and expires_at <= now()
+	`, appID, normalizeEmail(email), purpose)
 	if err != nil {
 		return err
 	}

@@ -50,7 +50,7 @@ func Load() Config {
 		DatabaseURL:            getEnv("DATABASE_URL", fileConfig.value("database_url", "postgres://berserk:berserk@localhost:5432/berserk?sslmode=disable")),
 		PublicBaseURL:          getEnv("PUBLIC_BASE_URL", fileConfig.value("public_base_url", "https://www.eatfit.fun")),
 		WebAppID:               getEnv("WEB_APP_ID", fileConfig.value("web_app_id", "berserk.web")),
-		EmailCodeTTLSeconds:    getEnv("EMAIL_CODE_TTL_SECONDS", fileConfig.value("email_code_ttl_seconds", "90")),
+		EmailCodeTTLSeconds:    getEnv("EMAIL_CODE_TTL_SECONDS", fileConfig.value("email_code_ttl_seconds", "600")),
 		SMTPHost:               getEnv("SMTP_HOST", fileConfig.value("smtp_host", "")),
 		SMTPPort:               getEnv("SMTP_PORT", fileConfig.value("smtp_port", "587")),
 		SMTPUsername:           getEnv("SMTP_USERNAME", fileConfig.value("smtp_username", "")),

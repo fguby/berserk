@@ -3,7 +3,7 @@ http_addr: ":8080"
 database_url: "postgres://berserk:berserk@localhost:5432/berserk?sslmode=disable"
 public_base_url: "http://127.0.0.1/berserk"
 web_app_id: "berserk.web"
-email_code_ttl_seconds: "90"
+email_code_ttl_seconds: "600"
 
 smtp_host: ""
 smtp_port: "465"
